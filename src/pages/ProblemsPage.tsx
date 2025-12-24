@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CreateProblemDialog } from '@/components/dashboard/CreateProblemDialog';
 import { 
@@ -231,39 +230,41 @@ export default function ProblemsPage() {
               </TabsTrigger>
             </TabsList>
 
-            <div className="p-4">
-              <ScrollArea className="h-[calc(100vh-500px)]">
-                <TabsContent value="open" className="m-0 space-y-3">
-                  {openProblems && openProblems.length > 0 ? (
-                    openProblems.map(renderProblemCard)
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      Aucun problème ouvert
-                    </div>
-                  )}
-                </TabsContent>
+            <TabsContent value="open" className="m-0 p-4">
+              <div className="space-y-3">
+                {openProblems && openProblems.length > 0 ? (
+                  openProblems.map(renderProblemCard)
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Aucun problème ouvert
+                  </div>
+                )}
+              </div>
+            </TabsContent>
 
-                <TabsContent value="in_progress" className="m-0 space-y-3">
-                  {inProgressProblems && inProgressProblems.length > 0 ? (
-                    inProgressProblems.map(renderProblemCard)
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      Aucun problème en cours
-                    </div>
-                  )}
-                </TabsContent>
+            <TabsContent value="in_progress" className="m-0 p-4">
+              <div className="space-y-3">
+                {inProgressProblems && inProgressProblems.length > 0 ? (
+                  inProgressProblems.map(renderProblemCard)
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Aucun problème en cours
+                  </div>
+                )}
+              </div>
+            </TabsContent>
 
-                <TabsContent value="resolved" className="m-0 space-y-3">
-                  {resolvedProblems && resolvedProblems.length > 0 ? (
-                    resolvedProblems.map(renderProblemCard)
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      Aucun problème résolu
-                    </div>
-                  )}
-                </TabsContent>
-              </ScrollArea>
-            </div>
+            <TabsContent value="resolved" className="m-0 p-4">
+              <div className="space-y-3">
+                {resolvedProblems && resolvedProblems.length > 0 ? (
+                  resolvedProblems.map(renderProblemCard)
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Aucun problème résolu
+                  </div>
+                )}
+              </div>
+            </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
