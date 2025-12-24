@@ -1,23 +1,24 @@
 import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { useCategories, useKpis } from '@/hooks/useSfmData';
+import { useCategories } from '@/hooks/useSfmData';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { SfmColumn } from '@/components/dashboard/SfmColumn';
 import { CreateActionDialog } from '@/components/dashboard/CreateActionDialog';
 
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { 
   TrendingUp, 
   AlertTriangle, 
-  CheckCircle2, 
   Clock,
-  BarChart3
+  BarChart3,
+  Bell
 } from 'lucide-react';
 
 export default function DashboardPage() {
-  const { data: categories, isLoading } = useCategories();
+  const { data: categories, isLoading: categoriesLoading } = useCategories();
+  const { data: stats, isLoading: statsLoading } = useDashboardStats();
   
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [kpiDialogOpen, setKpiDialogOpen] = useState(false);
@@ -33,12 +34,19 @@ export default function DashboardPage() {
     setKpiDialogOpen(true);
   };
 
+  const isLoading = categoriesLoading || statsLoading;
+
   if (isLoading) {
     return (
       <AppLayout title="Tableau de bord" subtitle="Vue d'ensemble des catégories SFM">
-        <div className="grid grid-cols-6 gap-4 h-[calc(100vh-180px)]">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-24 rounded-xl" />
+          ))}
+        </div>
+        <div className="flex gap-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Skeleton key={i} className="h-full rounded-xl" />
+            <Skeleton key={i} className="h-[500px] w-[320px] rounded-xl flex-shrink-0" />
           ))}
         </div>
       </AppLayout>
@@ -48,15 +56,15 @@ export default function DashboardPage() {
   return (
     <AppLayout title="Tableau de bord" subtitle="Vue d'ensemble des catégories SFM">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <Card className="bg-gradient-to-br from-card to-card/80 border-border/50">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-xl bg-primary/10 text-primary">
               <BarChart3 className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Catégories actives</p>
-              <p className="text-2xl font-bold">{categories?.length || 0}</p>
+              <p className="text-sm text-muted-foreground">Catégories</p>
+              <p className="text-2xl font-bold">{stats?.activeCategories || 0}</p>
             </div>
           </CardContent>
         </Card>
@@ -67,8 +75,8 @@ export default function DashboardPage() {
               <TrendingUp className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">KPIs suivis</p>
-              <p className="text-2xl font-bold">24</p>
+              <p className="text-sm text-muted-foreground">KPIs actifs</p>
+              <p className="text-2xl font-bold">{stats?.activeKpis || 0}</p>
             </div>
           </CardContent>
         </Card>
@@ -79,8 +87,8 @@ export default function DashboardPage() {
               <Clock className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Actions en cours</p>
-              <p className="text-2xl font-bold">12</p>
+              <p className="text-sm text-muted-foreground">Actions ouvertes</p>
+              <p className="text-2xl font-bold">{stats?.openActions || 0}</p>
             </div>
           </CardContent>
         </Card>
@@ -92,7 +100,19 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Problèmes ouverts</p>
-              <p className="text-2xl font-bold">5</p>
+              <p className="text-2xl font-bold">{stats?.openProblems || 0}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-card to-card/80 border-border/50">
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-primary/10 text-primary">
+              <Bell className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Alertes</p>
+              <p className="text-2xl font-bold">{stats?.unreadAlerts || 0}</p>
             </div>
           </CardContent>
         </Card>
