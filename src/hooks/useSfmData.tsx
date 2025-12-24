@@ -97,7 +97,7 @@ export function useAddKpiValue() {
 }
 
 // Actions
-export function useActions(categoryId?: string, status?: string) {
+export function useActions(categoryId?: string, status?: 'todo' | 'in_progress' | 'completed' | 'overdue') {
   return useQuery({
     queryKey: ['actions', categoryId, status],
     queryFn: async () => {
@@ -140,8 +140,8 @@ export function useTodayPriorities() {
 export function useCreateAction() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (action: { category_id: string; title: string; description?: string; priority?: string; due_date: string; responsible_id?: string; created_by?: string; status?: string }) => {
-      const { data, error } = await supabase.from('actions').insert(action).select().single();
+    mutationFn: async (action: { category_id: string; title: string; description?: string; priority?: 'low' | 'medium' | 'high' | 'urgent'; due_date: string; responsible_id?: string; created_by?: string; status?: 'todo' | 'in_progress' | 'completed' | 'overdue' }) => {
+      const { data, error } = await supabase.from('actions').insert([action]).select().single();
       if (error) throw error;
       return data;
     },
@@ -159,7 +159,7 @@ export function useCreateAction() {
 export function useUpdateAction() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; status?: string; completed_at?: string | null }) => {
+    mutationFn: async ({ id, ...updates }: { id: string; status?: 'todo' | 'in_progress' | 'completed' | 'overdue'; completed_at?: string | null }) => {
       const { data, error } = await supabase
         .from('actions')
         .update(updates)
@@ -199,7 +199,7 @@ export function useDeleteAction() {
 }
 
 // Problems
-export function useProblems(categoryId?: string, status?: string) {
+export function useProblems(categoryId?: string, status?: 'open' | 'in_progress' | 'resolved') {
   return useQuery({
     queryKey: ['problems', categoryId, status],
     queryFn: async () => {
@@ -224,8 +224,8 @@ export function useProblems(categoryId?: string, status?: string) {
 export function useCreateProblem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (problem: { category_id: string; title: string; description?: string; severity?: string; reported_by?: string; status?: string; escalated?: boolean }) => {
-      const { data, error } = await supabase.from('problems').insert(problem).select().single();
+    mutationFn: async (problem: { category_id: string; title: string; description?: string; severity?: 'low' | 'medium' | 'high' | 'critical'; reported_by?: string; status?: 'open' | 'in_progress' | 'resolved'; escalated?: boolean }) => {
+      const { data, error } = await supabase.from('problems').insert([problem]).select().single();
       if (error) throw error;
       return data;
     },
@@ -242,7 +242,7 @@ export function useCreateProblem() {
 export function useUpdateProblem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; status?: string; resolved_at?: string | null }) => {
+    mutationFn: async ({ id, ...updates }: { id: string; status?: 'open' | 'in_progress' | 'resolved'; resolved_at?: string | null }) => {
       const { data, error } = await supabase
         .from('problems')
         .update(updates)

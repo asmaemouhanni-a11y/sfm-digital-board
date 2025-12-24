@@ -68,9 +68,14 @@ export function CreateActionDialog({ open, onOpenChange, defaultCategoryId }: Cr
 
   const onSubmit = async (data: ActionFormData) => {
     await createAction.mutateAsync({
-      ...data,
+      category_id: data.category_id,
+      title: data.title,
+      description: data.description,
+      priority: data.priority,
+      due_date: data.due_date,
+      responsible_id: data.responsible_id || undefined,
       created_by: user?.id,
-      status: 'todo',
+      status: 'todo' as const,
     });
     form.reset();
     onOpenChange(false);
