@@ -6,9 +6,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Factory, Shield, TrendingUp, Users } from 'lucide-react';
+import { Factory, Shield, TrendingUp, Users, Crown, Briefcase, HardHat, Wrench } from 'lucide-react';
 import { z } from 'zod';
+import { AppRole } from '@/types/sfm';
 
 const loginSchema = z.object({
   email: z.string().email('Email invalide'),
@@ -19,11 +27,19 @@ const signupSchema = z.object({
   fullName: z.string().min(2, 'Nom requis (2 caractères minimum)'),
   email: z.string().email('Email invalide'),
   password: z.string().min(6, 'Mot de passe: 6 caractères minimum'),
+  role: z.enum(['admin', 'manager', 'team_leader', 'operator']),
 });
+
+const roleLabels: Record<AppRole, { label: string; description: string; icon: React.ReactNode }> = {
+  admin: { label: 'Administrateur', description: 'Accès complet', icon: <Crown className="h-4 w-4" /> },
+  manager: { label: 'Manager / Superviseur', description: 'Suivi global des KPI', icon: <Briefcase className="h-4 w-4" /> },
+  team_leader: { label: 'Chef d\'équipe', description: 'Gestion des actions', icon: <HardHat className="h-4 w-4" /> },
+  operator: { label: 'Opérateur', description: 'Consultation', icon: <Wrench className="h-4 w-4" /> },
+};
 
 export default function Auth() {
   const navigate = useNavigate();
-  const { user, signIn, signUp, loading } = useAuth();
+  const { user, signUp, signIn, loading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [loginEmail, setLoginEmail] = useState('');
@@ -32,6 +48,7 @@ export default function Auth() {
   const [signupName, setSignupName] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
+  const [signupRole, setSignupRole] = useState<AppRole>('operator');
 
   useEffect(() => {
     if (user && !loading) {
@@ -71,7 +88,7 @@ export default function Auth() {
     e.preventDefault();
     
     try {
-      signupSchema.parse({ fullName: signupName, email: signupEmail, password: signupPassword });
+      signupSchema.parse({ fullName: signupName, email: signupEmail, password: signupPassword, role: signupRole });
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
@@ -80,7 +97,7 @@ export default function Auth() {
     }
 
     setIsSubmitting(true);
-    const { error } = await signUp(signupEmail, signupPassword, signupName);
+    const { error } = await signUp(signupEmail, signupPassword, signupName, signupRole);
     setIsSubmitting(false);
 
     if (error) {
@@ -106,7 +123,7 @@ export default function Auth() {
   return (
     <div className="min-h-screen flex">
       {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary/20 via-background to-background p-12 flex-col justify-between">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary/10 via-background to-background p-12 flex-col justify-between border-r border-border">
         <div>
           <div className="flex items-center gap-3 mb-8">
             <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
@@ -126,7 +143,7 @@ export default function Auth() {
           </h2>
           
           <div className="grid grid-cols-2 gap-6">
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-3 p-4 rounded-lg bg-card border border-border/50">
               <div className="p-2 rounded-lg bg-sfm-safety/10">
                 <Shield className="h-5 w-5 text-sfm-safety" />
               </div>
@@ -135,7 +152,7 @@ export default function Auth() {
                 <p className="text-sm text-muted-foreground">Suivi des incidents</p>
               </div>
             </div>
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-3 p-4 rounded-lg bg-card border border-border/50">
               <div className="p-2 rounded-lg bg-sfm-quality/10">
                 <TrendingUp className="h-5 w-5 text-sfm-quality" />
               </div>
@@ -144,7 +161,7 @@ export default function Auth() {
                 <p className="text-sm text-muted-foreground">KPIs en temps réel</p>
               </div>
             </div>
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-3 p-4 rounded-lg bg-card border border-border/50">
               <div className="p-2 rounded-lg bg-sfm-performance/10">
                 <TrendingUp className="h-5 w-5 text-sfm-performance" />
               </div>
@@ -153,7 +170,7 @@ export default function Auth() {
                 <p className="text-sm text-muted-foreground">Tableaux de bord</p>
               </div>
             </div>
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-3 p-4 rounded-lg bg-card border border-border/50">
               <div className="p-2 rounded-lg bg-sfm-human/10">
                 <Users className="h-5 w-5 text-sfm-human" />
               </div>
@@ -171,8 +188,8 @@ export default function Auth() {
       </div>
 
       {/* Right side - Auth forms */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
-        <Card className="w-full max-w-md border-border/50 bg-card/50 backdrop-blur-sm">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-muted/30">
+        <Card className="w-full max-w-md border-border shadow-lg">
           <CardHeader className="text-center">
             <div className="lg:hidden flex items-center justify-center gap-3 mb-4">
               <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
@@ -203,7 +220,6 @@ export default function Auth() {
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                       required
-                      className="bg-background/50"
                     />
                   </div>
                   <div className="space-y-2">
@@ -215,7 +231,6 @@ export default function Auth() {
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       required
-                      className="bg-background/50"
                     />
                   </div>
                   <Button type="submit" className="w-full" disabled={isSubmitting}>
@@ -235,7 +250,6 @@ export default function Auth() {
                       value={signupName}
                       onChange={(e) => setSignupName(e.target.value)}
                       required
-                      className="bg-background/50"
                     />
                   </div>
                   <div className="space-y-2">
@@ -247,7 +261,6 @@ export default function Auth() {
                       value={signupEmail}
                       onChange={(e) => setSignupEmail(e.target.value)}
                       required
-                      className="bg-background/50"
                     />
                   </div>
                   <div className="space-y-2">
@@ -259,8 +272,30 @@ export default function Auth() {
                       value={signupPassword}
                       onChange={(e) => setSignupPassword(e.target.value)}
                       required
-                      className="bg-background/50"
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Rôle</Label>
+                    <Select value={signupRole} onValueChange={(value: AppRole) => setSignupRole(value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionnez votre rôle" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(roleLabels) as AppRole[]).map((role) => (
+                          <SelectItem key={role} value={role}>
+                            <div className="flex items-center gap-2">
+                              {roleLabels[role].icon}
+                              <div>
+                                <span className="font-medium">{roleLabels[role].label}</span>
+                                <span className="text-muted-foreground ml-2 text-xs">
+                                  ({roleLabels[role].description})
+                                </span>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <Button type="submit" className="w-full" disabled={isSubmitting}>
                     {isSubmitting ? 'Création...' : 'Créer un compte'}

@@ -62,9 +62,12 @@ export function CreateProblemDialog({ open, onOpenChange, defaultCategoryId }: C
 
   const onSubmit = async (data: ProblemFormData) => {
     await createProblem.mutateAsync({
-      ...data,
+      category_id: data.category_id,
+      title: data.title,
+      description: data.description,
+      severity: data.severity,
       reported_by: user?.id,
-      status: 'open',
+      status: 'open' as const,
       escalated: data.severity === 'critical',
     });
     form.reset();
