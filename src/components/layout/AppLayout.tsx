@@ -1,6 +1,7 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useSidebar } from '@/contexts/SidebarContext';
 import { AppSidebar } from './AppSidebar';
 import { AppHeader } from './AppHeader';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,7 +15,7 @@ interface AppLayoutProps {
 export function AppLayout({ children, title, subtitle }: AppLayoutProps) {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { collapsed } = useSidebar();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -46,7 +47,10 @@ export function AppLayout({ children, title, subtitle }: AppLayoutProps) {
     <div className="min-h-screen bg-background flex">
       <AppSidebar />
       
-      <div className="flex-1 ml-64 transition-all duration-300" style={{ marginLeft: sidebarCollapsed ? '64px' : '256px' }}>
+      <div 
+        className="flex-1 transition-all duration-300"
+        style={{ marginLeft: collapsed ? '64px' : '256px' }}
+      >
         <AppHeader title={title} subtitle={subtitle} />
         
         <main className="p-6">
