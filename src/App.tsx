@@ -6,7 +6,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
+import DashboardPage from "./pages/DashboardPage";
+import PrioritiesPage from "./pages/PrioritiesPage";
+import AlertsPage from "./pages/AlertsPage";
+import ActionsPage from "./pages/ActionsPage";
+import ProblemsPage from "./pages/ProblemsPage";
+import NotesPage from "./pages/NotesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,7 +26,12 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/priorities" element={<PrioritiesPage />} />
+            <Route path="/alerts" element={<AlertsPage />} />
+            <Route path="/actions" element={<ActionsPage />} />
+            <Route path="/problems" element={<ProblemsPage />} />
+            <Route path="/notes" element={<NotesPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
