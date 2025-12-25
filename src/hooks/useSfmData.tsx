@@ -167,7 +167,25 @@ export function useTodayPriorities() {
       const { data, error } = await supabase
         .from('actions')
         .select('*, category:sfm_categories(*)')
-        .or(`due_date.eq.${today},priority.eq.urgent,priority.eq.high`)
+        .eq('due_date', today)
+        .neq('status', 'completed')
+        .order('priority')
+        .order('due_date');
+      if (error) throw error;
+      return data as unknown as Action[];
+    },
+  });
+}
+
+export function useOverdueActions() {
+  const today = new Date().toISOString().split('T')[0];
+  return useQuery({
+    queryKey: ['overdue_actions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('actions')
+        .select('*, category:sfm_categories(*)')
+        .lt('due_date', today)
         .neq('status', 'completed')
         .order('priority')
         .order('due_date');

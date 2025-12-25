@@ -17,12 +17,12 @@ interface CategoryDialogProps {
 }
 
 const ICONS = [
-  { value: 'shield', label: 'Bouclier (Sécurité)' },
-  { value: 'check-circle', label: 'Check (Qualité)' },
-  { value: 'dollar-sign', label: 'Dollar (Coût)' },
-  { value: 'truck', label: 'Camion (Livraison)' },
-  { value: 'trending-up', label: 'Tendance (Performance)' },
-  { value: 'users', label: 'Utilisateurs (Humain)' },
+  { value: 'shield', label: 'Bouclier' },
+  { value: 'check-circle', label: 'Check' },
+  { value: 'dollar-sign', label: 'Dollar' },
+  { value: 'truck', label: 'Camion' },
+  { value: 'trending-up', label: 'Tendance' },
+  { value: 'users', label: 'Utilisateurs' },
   { value: 'settings', label: 'Paramètres' },
   { value: 'alert-triangle', label: 'Alerte' },
 ];

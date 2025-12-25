@@ -18,11 +18,20 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
 
-const severityConfig: Record<string, { icon: React.ElementType; class: string; label: string }> = {
-  critical: { icon: AlertTriangle, class: 'bg-destructive/10 text-destructive border-destructive/20', label: 'Critique' },
-  high: { icon: AlertCircle, class: 'bg-[hsl(var(--status-orange))]/10 text-[hsl(var(--status-orange))] border-[hsl(var(--status-orange))]/20', label: 'Haute' },
-  medium: { icon: Info, class: 'bg-primary/10 text-primary border-primary/20', label: 'Moyenne' },
-  low: { icon: Bell, class: 'bg-muted text-muted-foreground border-border', label: 'Basse' },
+const severityConfig: Record<string, { icon: React.ElementType; class: string; label: string; order: number }> = {
+  critical: { icon: AlertTriangle, class: 'bg-destructive/10 text-destructive border-destructive/20', label: 'Critique', order: 0 },
+  high: { icon: AlertCircle, class: 'bg-[hsl(var(--status-orange))]/10 text-[hsl(var(--status-orange))] border-[hsl(var(--status-orange))]/20', label: 'Haute', order: 1 },
+  medium: { icon: Info, class: 'bg-primary/10 text-primary border-primary/20', label: 'Moyenne', order: 2 },
+  low: { icon: Bell, class: 'bg-muted text-muted-foreground border-border', label: 'Basse', order: 3 },
+};
+
+// Sort by severity (critical first)
+const sortBySeverity = (alerts: any[]) => {
+  return [...alerts].sort((a, b) => {
+    const orderA = severityConfig[a.severity]?.order ?? 99;
+    const orderB = severityConfig[b.severity]?.order ?? 99;
+    return orderA - orderB;
+  });
 };
 
 export default function AlertsPage() {
@@ -32,6 +41,8 @@ export default function AlertsPage() {
 
   const criticalCount = alerts?.filter(a => a.severity === 'critical').length || 0;
   const highCount = alerts?.filter(a => a.severity === 'high').length || 0;
+
+  const sortedAlerts = alerts ? sortBySeverity(alerts) : [];
 
   const handleMarkRead = async (alertId: string) => {
     try {
@@ -57,7 +68,7 @@ export default function AlertsPage() {
   return (
     <AppLayout title="Alertes" subtitle="Notifications et alertes système">
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <Card className="border-destructive/30 bg-destructive/5">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-xl bg-destructive/10 text-destructive">
@@ -104,20 +115,24 @@ export default function AlertsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {alerts && alerts.length > 0 ? (
+          {sortedAlerts && sortedAlerts.length > 0 ? (
             <div className="space-y-3">
-              {alerts.map((alert) => {
+              {sortedAlerts.map((alert) => {
                 const config = severityConfig[alert.severity] || severityConfig.low;
                 const Icon = config.icon;
 
                 return (
                   <div
                     key={alert.id}
-                    className="p-4 rounded-lg border border-border/50 bg-card transition-all hover:shadow-md"
+                    className={`p-4 rounded-lg border transition-all hover:shadow-md ${
+                      alert.severity === 'critical' 
+                        ? 'border-destructive/50 bg-destructive/5' 
+                        : 'border-border/50 bg-card'
+                    }`}
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
                           <Badge variant="outline" className={config.class}>
                             <Icon className="h-3 w-3 mr-1" />
                             {config.label}

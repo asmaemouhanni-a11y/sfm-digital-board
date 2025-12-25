@@ -183,7 +183,7 @@ export default function Auth() {
         </div>
 
         <p className="text-sm text-muted-foreground">
-          © 2024 SFM Digital. Solution de management visuel industriel.
+          © 2026 SFM Digital. Solution de management visuel industriel.
         </p>
       </div>
 

@@ -39,8 +39,8 @@ export default function DashboardPage() {
   const [kpiDialogOpen, setKpiDialogOpen] = useState(false);
   const [selectedKpi, setSelectedKpi] = useState<Kpi | null>(null);
 
-  // Permissions
-  const canManageCategories = role === 'admin';
+  // Permissions - Admin and manager can manage categories and KPIs
+  const canManageCategories = role === 'admin' || role === 'manager';
 
   const handleAddCategory = () => {
     setSelectedCategory(null);
@@ -163,10 +163,7 @@ export default function DashboardPage() {
 
       {/* SFM Columns */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">Catégories SFM</h2>
-          <p className="text-sm text-muted-foreground">Sécurité, Qualité, Coût, Livraison, Performance, Humain</p>
-        </div>
+        <h2 className="text-lg font-semibold text-foreground">Catégories SFM</h2>
         {canManageCategories && (
           <Button onClick={handleAddCategory} size="sm" className="gap-2 self-start sm:self-auto">
             <Plus className="h-4 w-4" />
