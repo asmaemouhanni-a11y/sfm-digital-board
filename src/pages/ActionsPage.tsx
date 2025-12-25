@@ -239,16 +239,20 @@ export default function ActionsPage() {
         <CardContent className="p-0">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
             <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 flex-wrap">
-              <TabsTrigger value="overdue" className="rounded-none border-b-2 border-transparent data-[state=active]:border-destructive text-destructive">
+              <TabsTrigger value="overdue" className="rounded-none border-b-2 border-transparent data-[state=active]:border-destructive text-destructive gap-2">
+                <AlertTriangle className="h-4 w-4" />
                 En retard ({overdueActions?.length || 0})
               </TabsTrigger>
-              <TabsTrigger value="todo" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+              <TabsTrigger value="todo" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary gap-2">
+                <Clock className="h-4 w-4" />
                 À faire ({todoActions?.length || 0})
               </TabsTrigger>
-              <TabsTrigger value="in_progress" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+              <TabsTrigger value="in_progress" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary gap-2">
+                <Play className="h-4 w-4" />
                 En cours ({inProgressActions?.length || 0})
               </TabsTrigger>
-              <TabsTrigger value="completed" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
+              <TabsTrigger value="completed" className="rounded-none border-b-2 border-transparent data-[state=active]:border-[hsl(var(--status-green))] text-[hsl(var(--status-green))] gap-2">
+                <CheckCircle2 className="h-4 w-4" />
                 Terminées ({completedActions?.length || 0})
               </TabsTrigger>
             </TabsList>
