@@ -5,7 +5,7 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { SfmColumn } from '@/components/dashboard/SfmColumn';
 import { CreateActionDialog } from '@/components/dashboard/CreateActionDialog';
 
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
@@ -124,20 +124,16 @@ export default function DashboardPage() {
         <p className="text-sm text-muted-foreground">Sécurité, Qualité, Coût, Livraison, Performance, Humain</p>
       </div>
 
-      <ScrollArea className="h-[calc(100vh-380px)]">
-        <div className="flex gap-4 pb-4">
-          {categories?.map((category) => (
-            <div key={category.id} className="w-[320px] flex-shrink-0">
-              <SfmColumn 
-                category={category} 
-                onAddAction={() => handleAddAction(category.id)}
-                onAddKpi={() => handleAddKpi(category.id)}
-              />
-            </div>
-          ))}
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4">
+        {categories?.map((category) => (
+          <SfmColumn 
+            key={category.id}
+            category={category} 
+            onAddAction={() => handleAddAction(category.id)}
+            onAddKpi={() => handleAddKpi(category.id)}
+          />
+        ))}
+      </div>
 
       <CreateActionDialog
         open={actionDialogOpen}
