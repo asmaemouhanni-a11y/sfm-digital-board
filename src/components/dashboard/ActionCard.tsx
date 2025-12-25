@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { format, isToday, isPast, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Calendar, User, AlertTriangle, Clock, CheckCircle, MoreHorizontal } from 'lucide-react';
+import { Calendar, User, AlertTriangle, Clock, CheckCircle, MoreHorizontal, Pencil, Trash2, Play, Check } from 'lucide-react';
 import { Action } from '@/types/sfm';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +10,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useUpdateAction, useDeleteAction } from '@/hooks/useSfmData';
@@ -17,6 +19,7 @@ import { useAuth } from '@/hooks/useAuth';
 interface ActionCardProps {
   action: Action;
   compact?: boolean;
+  onEdit?: (action: Action) => void;
 }
 
 const priorityConfig = {
@@ -33,8 +36,8 @@ const statusConfig = {
   overdue: { label: 'En retard', icon: AlertTriangle, color: 'text-destructive' },
 };
 
-export function ActionCard({ action, compact = false }: ActionCardProps) {
-  const { hasPermission } = useAuth();
+export function ActionCard({ action, compact = false, onEdit }: ActionCardProps) {
+  const { hasPermission, role } = useAuth();
   const updateAction = useUpdateAction();
   const deleteAction = useDeleteAction();
 
@@ -46,7 +49,8 @@ export function ActionCard({ action, compact = false }: ActionCardProps) {
   const status = statusConfig[isOverdue ? 'overdue' : action.status];
   const StatusIcon = status.icon;
 
-  const canManage = hasPermission(['admin', 'manager', 'team_leader']);
+  // All roles except operator can manage
+  const canManage = role !== 'operator';
 
   const handleStatusChange = (newStatus: 'todo' | 'in_progress' | 'completed') => {
     updateAction.mutate({
@@ -66,7 +70,7 @@ export function ActionCard({ action, compact = false }: ActionCardProps) {
     return (
       <div 
         className={cn(
-          "industrial-card p-3 transition-all duration-200",
+          "industrial-card p-3 transition-all duration-200 group",
           isOverdue && "border-destructive/50",
           isDueToday && !isOverdue && "border-status-orange/50"
         )}
@@ -94,9 +98,55 @@ export function ActionCard({ action, compact = false }: ActionCardProps) {
               )}
             </div>
           </div>
-          <Badge variant="outline" className={cn("text-[10px] flex-shrink-0", priority.className)}>
-            {priority.label}
-          </Badge>
+          <div className="flex items-center gap-1">
+            <Badge variant="outline" className={cn("text-[10px] flex-shrink-0", priority.className)}>
+              {priority.label}
+            </Badge>
+            {canManage && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <MoreHorizontal className="h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {onEdit && (
+                    <DropdownMenuItem onClick={() => onEdit(action)}>
+                      <Pencil className="h-3.5 w-3.5 mr-2" />
+                      Modifier
+                    </DropdownMenuItem>
+                  )}
+                  {action.status !== 'completed' && (
+                    <>
+                      <DropdownMenuItem onClick={() => handleStatusChange('in_progress')}>
+                        <Play className="h-3.5 w-3.5 mr-2" />
+                        En cours
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleStatusChange('completed')}>
+                        <Check className="h-3.5 w-3.5 mr-2" />
+                        Terminée
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  {action.status === 'completed' && (
+                    <DropdownMenuItem onClick={() => handleStatusChange('todo')}>
+                      <Clock className="h-3.5 w-3.5 mr-2" />
+                      Réouvrir
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                    <Trash2 className="h-3.5 w-3.5 mr-2" />
+                    Supprimer
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -105,7 +155,7 @@ export function ActionCard({ action, compact = false }: ActionCardProps) {
   return (
     <div 
       className={cn(
-        "industrial-card p-4 transition-all duration-200",
+        "industrial-card p-4 transition-all duration-200 group",
         isOverdue && "border-destructive/50",
         isDueToday && !isOverdue && "border-status-orange/50"
       )}
@@ -156,22 +206,33 @@ export function ActionCard({ action, compact = false }: ActionCardProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                {onEdit && (
+                  <DropdownMenuItem onClick={() => onEdit(action)}>
+                    <Pencil className="h-3.5 w-3.5 mr-2" />
+                    Modifier
+                  </DropdownMenuItem>
+                )}
                 {action.status !== 'completed' && (
                   <>
                     <DropdownMenuItem onClick={() => handleStatusChange('in_progress')}>
+                      <Play className="h-3.5 w-3.5 mr-2" />
                       Marquer en cours
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleStatusChange('completed')}>
+                      <Check className="h-3.5 w-3.5 mr-2" />
                       Marquer terminée
                     </DropdownMenuItem>
                   </>
                 )}
                 {action.status === 'completed' && (
                   <DropdownMenuItem onClick={() => handleStatusChange('todo')}>
+                    <Clock className="h-3.5 w-3.5 mr-2" />
                     Réouvrir
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                  <Trash2 className="h-3.5 w-3.5 mr-2" />
                   Supprimer
                 </DropdownMenuItem>
               </DropdownMenuContent>

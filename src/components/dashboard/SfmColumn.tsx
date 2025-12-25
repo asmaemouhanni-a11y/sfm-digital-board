@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Shield, CheckCircle, DollarSign, Truck, TrendingUp, Users, ChevronDown, AlertTriangle, Clock, Plus } from 'lucide-react';
+import { Shield, CheckCircle, DollarSign, Truck, TrendingUp, Users, AlertTriangle, Clock, Plus, Pencil } from 'lucide-react';
 import { SfmCategory, Kpi, Action } from '@/types/sfm';
 import { useKpis, useCategoryStats, useActions } from '@/hooks/useSfmData';
 import { useAuth } from '@/hooks/useAuth';
 import { KpiChart } from './KpiChart';
 import { ActionCard } from './ActionCard';
+import { EditActionDialog } from './EditActionDialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -26,24 +27,28 @@ interface SfmColumnProps {
 }
 
 export function SfmColumn({ category, onAddAction, onAddKpi }: SfmColumnProps) {
-  const { hasPermission } = useAuth();
+  const { role } = useAuth();
   const { data: kpis } = useKpis(category.id);
   const { data: stats } = useCategoryStats(category.id);
   const { data: actions } = useActions(category.id);
   
   const [selectedKpiId, setSelectedKpiId] = useState<string | null>(null);
+  const [editActionOpen, setEditActionOpen] = useState(false);
+  const [selectedAction, setSelectedAction] = useState<Action | null>(null);
   
   const Icon = iconMap[category.icon || 'trending-up'] || TrendingUp;
   const selectedKpi = kpis?.find(k => k.id === selectedKpiId) || kpis?.[0];
 
   const openActions = actions?.filter(a => a.status !== 'completed') || [];
-  const overdueActions = actions?.filter(a => 
-    a.status === 'overdue' || 
-    (a.status !== 'completed' && new Date(a.due_date) < new Date())
-  ) || [];
 
-  const canManageKpis = hasPermission(['admin', 'manager']);
-  const canManageActions = hasPermission(['admin', 'manager', 'team_leader']);
+  // All roles except operator can manage
+  const canManage = role !== 'operator';
+  const canManageKpis = role === 'admin' || role === 'manager';
+
+  const handleEditAction = (action: Action) => {
+    setSelectedAction(action);
+    setEditActionOpen(true);
+  };
 
   return (
     <div 
@@ -144,7 +149,7 @@ export function SfmColumn({ category, onAddAction, onAddKpi }: SfmColumnProps) {
               {openActions.length}
             </Badge>
           </div>
-          {canManageActions && (
+          {canManage && (
             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onAddAction}>
               <Plus className="h-3 w-3" />
             </Button>
@@ -155,7 +160,12 @@ export function SfmColumn({ category, onAddAction, onAddKpi }: SfmColumnProps) {
           <div className="space-y-2">
             {openActions.length > 0 ? (
               openActions.slice(0, 5).map((action) => (
-                <ActionCard key={action.id} action={action} compact />
+                <ActionCard 
+                  key={action.id} 
+                  action={action} 
+                  compact 
+                  onEdit={canManage ? handleEditAction : undefined}
+                />
               ))
             ) : (
               <div className="text-center py-8 text-sm text-muted-foreground">
@@ -165,6 +175,13 @@ export function SfmColumn({ category, onAddAction, onAddKpi }: SfmColumnProps) {
           </div>
         </ScrollArea>
       </div>
+
+      {/* Edit Action Dialog */}
+      <EditActionDialog
+        open={editActionOpen}
+        onOpenChange={setEditActionOpen}
+        action={selectedAction}
+      />
     </div>
   );
 }
