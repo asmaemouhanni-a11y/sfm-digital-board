@@ -42,6 +42,10 @@ export interface Kpi {
   description?: string;
   unit?: string;
   target_value?: number;
+  warning_threshold?: number;
+  critical_threshold?: number;
+  performance_direction?: string;
+  display_order?: number;
   frequency: KpiFrequency;
   chart_type: ChartType;
   is_active: boolean;
@@ -58,6 +62,7 @@ export interface KpiValue {
   week_number?: number;
   trend: KpiTrend;
   status: KpiStatus;
+  comment?: string;
   recorded_by?: string;
   created_at: string;
 }

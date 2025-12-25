@@ -121,13 +121,23 @@ export function useDeleteKpi() {
 export function useAddKpiValue() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (value: { kpi_id: string; value: number; week_number?: number }) => {
+    mutationFn: async (value: { 
+      kpi_id: string; 
+      value: number; 
+      week_number?: number;
+      recorded_at?: string;
+      status?: 'green' | 'orange' | 'red';
+      trend?: 'up' | 'down' | 'stable';
+      comment?: string;
+      recorded_by?: string;
+    }) => {
       const { data, error } = await supabase.from('kpi_values').insert(value).select().single();
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['kpi_values'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard_stats'] });
       toast.success('Valeur KPI enregistrée');
     },
     onError: () => {

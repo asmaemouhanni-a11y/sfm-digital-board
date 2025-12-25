@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Shield, CheckCircle, DollarSign, Truck, TrendingUp, Users, AlertTriangle, Clock, Plus, Pencil, Trash2, MoreHorizontal } from 'lucide-react';
+import { Shield, CheckCircle, DollarSign, Truck, TrendingUp, Users, AlertTriangle, Clock, Plus, Pencil, Trash2, MoreHorizontal, PlusCircle } from 'lucide-react';
 import { SfmCategory, Kpi, Action } from '@/types/sfm';
 import { useKpis, useCategoryStats, useActions, useDeleteKpi } from '@/hooks/useSfmData';
 import { useAuth } from '@/hooks/useAuth';
 import { KpiChart } from './KpiChart';
 import { ActionCard } from './ActionCard';
 import { EditActionDialog } from './EditActionDialog';
+import { AddKpiValueDialog } from './AddKpiValueDialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -45,6 +46,7 @@ export function SfmColumn({ category, onAddAction, onAddKpi, onEditCategory, onD
   const [selectedKpiId, setSelectedKpiId] = useState<string | null>(null);
   const [editActionOpen, setEditActionOpen] = useState(false);
   const [selectedAction, setSelectedAction] = useState<Action | null>(null);
+  const [addValueDialogOpen, setAddValueDialogOpen] = useState(false);
   
   const Icon = iconMap[category.icon || 'trending-up'] || TrendingUp;
   const selectedKpi = kpis?.find(k => k.id === selectedKpiId) || kpis?.[0];
@@ -203,6 +205,18 @@ export function SfmColumn({ category, onAddAction, onAddKpi, onEditCategory, onD
       {selectedKpi && (
         <div className="p-4 border-b border-border/30">
           <KpiChart kpi={selectedKpi} categoryColor={category.color} />
+          {/* Add KPI Value Button */}
+          {canManageKpis && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full mt-3 gap-2"
+              onClick={() => setAddValueDialogOpen(true)}
+            >
+              <PlusCircle className="h-4 w-4" />
+              Ajouter une valeur
+            </Button>
+          )}
         </div>
       )}
 
@@ -249,6 +263,14 @@ export function SfmColumn({ category, onAddAction, onAddKpi, onEditCategory, onD
         open={editActionOpen}
         onOpenChange={setEditActionOpen}
         action={selectedAction}
+      />
+
+      {/* Add KPI Value Dialog */}
+      <AddKpiValueDialog
+        open={addValueDialogOpen}
+        onOpenChange={setAddValueDialogOpen}
+        defaultKpiId={selectedKpi?.id}
+        defaultCategoryId={category.id}
       />
     </div>
   );
