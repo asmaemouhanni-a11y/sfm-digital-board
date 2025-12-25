@@ -246,7 +246,7 @@ export function AddKpiValueDialog({ open, onOpenChange, defaultKpiId, defaultCat
                 ))}
               </SelectContent>
             </Select>
-            {selectedKpi?.target_value && (
+            {selectedKpi?.target_value !== undefined && selectedKpi?.target_value !== null && (
               <p className="text-xs text-muted-foreground">
                 Objectif: {selectedKpi.target_value} {selectedKpi.unit}
               </p>
