@@ -115,11 +115,15 @@ export interface Note {
 export interface SmartAlert {
   id: string;
   type: string;
+  title?: string;
   message: string;
   severity: string;
   related_id?: string;
+  related_type?: string;
+  category_id?: string;
   is_read: boolean;
   created_at: string;
+  category?: SfmCategory;
 }
 
 export interface CategoryStats {

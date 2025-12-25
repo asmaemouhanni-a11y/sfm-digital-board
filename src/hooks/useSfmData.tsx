@@ -375,12 +375,27 @@ export function useSmartAlerts() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('smart_alerts')
-        .select('*')
+        .select('*, category:sfm_categories(*)')
         .eq('is_read', false)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(50);
       if (error) throw error;
-      return data as SmartAlert[];
+      return data as (SmartAlert & { category?: SfmCategory })[];
+    },
+  });
+}
+
+export function useAllAlerts() {
+  return useQuery({
+    queryKey: ['all_alerts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('smart_alerts')
+        .select('*, category:sfm_categories(*)')
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data as (SmartAlert & { category?: SfmCategory })[];
     },
   });
 }
@@ -397,6 +412,40 @@ export function useMarkAlertRead() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['smart_alerts'] });
+      queryClient.invalidateQueries({ queryKey: ['all_alerts'] });
+    },
+  });
+}
+
+export function useGenerateAlerts() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('generate-alerts');
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['smart_alerts'] });
+      queryClient.invalidateQueries({ queryKey: ['all_alerts'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard_stats'] });
+    },
+  });
+}
+
+export function useDeleteAlert() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('smart_alerts')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['smart_alerts'] });
+      queryClient.invalidateQueries({ queryKey: ['all_alerts'] });
     },
   });
 }

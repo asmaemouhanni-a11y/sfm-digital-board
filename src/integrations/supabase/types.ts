@@ -353,33 +353,50 @@ export type Database = {
       }
       smart_alerts: {
         Row: {
+          category_id: string | null
           created_at: string
           id: string
           is_read: boolean | null
           message: string
           related_id: string | null
+          related_type: string | null
           severity: string
+          title: string | null
           type: string
         }
         Insert: {
+          category_id?: string | null
           created_at?: string
           id?: string
           is_read?: boolean | null
           message: string
           related_id?: string | null
+          related_type?: string | null
           severity: string
+          title?: string | null
           type: string
         }
         Update: {
+          category_id?: string | null
           created_at?: string
           id?: string
           is_read?: boolean | null
           message?: string
           related_id?: string | null
+          related_type?: string | null
           severity?: string
+          title?: string | null
           type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "smart_alerts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "sfm_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
