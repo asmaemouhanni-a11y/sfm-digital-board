@@ -93,6 +93,7 @@ export type Database = {
       }
       kpi_values: {
         Row: {
+          comment: string | null
           created_at: string
           id: string
           kpi_id: string
@@ -104,6 +105,7 @@ export type Database = {
           week_number: number | null
         }
         Insert: {
+          comment?: string | null
           created_at?: string
           id?: string
           kpi_id: string
@@ -115,6 +117,7 @@ export type Database = {
           week_number?: number | null
         }
         Update: {
+          comment?: string | null
           created_at?: string
           id?: string
           kpi_id?: string
@@ -141,42 +144,54 @@ export type Database = {
           chart_type: Database["public"]["Enums"]["chart_type"] | null
           created_at: string
           created_by: string | null
+          critical_threshold: number | null
           description: string | null
+          display_order: number | null
           frequency: Database["public"]["Enums"]["kpi_frequency"] | null
           id: string
           is_active: boolean | null
           name: string
+          performance_direction: string | null
           target_value: number | null
           unit: string | null
           updated_at: string
+          warning_threshold: number | null
         }
         Insert: {
           category_id: string
           chart_type?: Database["public"]["Enums"]["chart_type"] | null
           created_at?: string
           created_by?: string | null
+          critical_threshold?: number | null
           description?: string | null
+          display_order?: number | null
           frequency?: Database["public"]["Enums"]["kpi_frequency"] | null
           id?: string
           is_active?: boolean | null
           name: string
+          performance_direction?: string | null
           target_value?: number | null
           unit?: string | null
           updated_at?: string
+          warning_threshold?: number | null
         }
         Update: {
           category_id?: string
           chart_type?: Database["public"]["Enums"]["chart_type"] | null
           created_at?: string
           created_by?: string | null
+          critical_threshold?: number | null
           description?: string | null
+          display_order?: number | null
           frequency?: Database["public"]["Enums"]["kpi_frequency"] | null
           id?: string
           is_active?: boolean | null
           name?: string
+          performance_direction?: string | null
           target_value?: number | null
           unit?: string | null
           updated_at?: string
+          warning_threshold?: number | null
         }
         Relationships: [
           {
