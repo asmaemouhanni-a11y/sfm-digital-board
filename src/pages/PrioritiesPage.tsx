@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { 
   Target, 
   Clock, 
@@ -107,68 +107,66 @@ export default function PrioritiesPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[calc(100vh-400px)]">
-            {priorities && priorities.length > 0 ? (
-              <div className="space-y-3">
-                {priorities.map((action) => {
-                  const config = priorityConfig[action.priority || 'medium'];
-                  const Icon = config.icon;
-                  const isOverdue = isPast(new Date(action.due_date)) && !isToday(new Date(action.due_date));
+          {priorities && priorities.length > 0 ? (
+            <div className="space-y-3">
+              {priorities.map((action) => {
+                const config = priorityConfig[action.priority || 'medium'];
+                const Icon = config.icon;
+                const isOverdue = isPast(new Date(action.due_date)) && !isToday(new Date(action.due_date));
 
-                  return (
-                    <div
-                      key={action.id}
-                      className={`p-4 rounded-lg border ${isOverdue ? 'border-destructive/50 bg-destructive/5' : 'border-border/50 bg-card'} transition-all hover:shadow-md`}
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="outline" className={config.class}>
-                              <Icon className="h-3 w-3 mr-1" />
-                              {config.label}
+                return (
+                  <div
+                    key={action.id}
+                    className={`p-4 rounded-lg border ${isOverdue ? 'border-destructive/50 bg-destructive/5' : 'border-border/50 bg-card'} transition-all hover:shadow-md`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge variant="outline" className={config.class}>
+                            <Icon className="h-3 w-3 mr-1" />
+                            {config.label}
+                          </Badge>
+                          {isOverdue && (
+                            <Badge variant="destructive" className="text-xs">
+                              En retard
                             </Badge>
-                            {isOverdue && (
-                              <Badge variant="destructive" className="text-xs">
-                                En retard
-                              </Badge>
-                            )}
-                          </div>
-                          <h3 className="font-semibold text-foreground">{action.title}</h3>
-                          {action.description && (
-                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{action.description}</p>
                           )}
-                          <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {format(new Date(action.due_date), 'dd MMM yyyy', { locale: fr })}
-                            </span>
-                          </div>
                         </div>
-                        
-                        {hasPermission(['admin', 'manager', 'team_leader']) && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleComplete(action.id)}
-                            className="flex-shrink-0"
-                          >
-                            <CheckCircle2 className="h-4 w-4 mr-1" />
-                            Terminer
-                          </Button>
+                        <h3 className="font-semibold text-foreground">{action.title}</h3>
+                        {action.description && (
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{action.description}</p>
                         )}
+                        <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {format(new Date(action.due_date), 'dd MMM yyyy', { locale: fr })}
+                          </span>
+                        </div>
                       </div>
+                      
+                      {hasPermission(['admin', 'manager', 'team_leader']) && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleComplete(action.id)}
+                          className="flex-shrink-0"
+                        >
+                          <CheckCircle2 className="h-4 w-4 mr-1" />
+                          Terminer
+                        </Button>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <CheckCircle2 className="h-12 w-12 text-[hsl(var(--status-green))] mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-foreground">Aucune priorité</h3>
-                <p className="text-sm text-muted-foreground">Toutes les actions sont à jour</p>
-              </div>
-            )}
-          </ScrollArea>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <CheckCircle2 className="h-12 w-12 text-[hsl(var(--status-green))] mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-foreground">Aucune priorité</h3>
+              <p className="text-sm text-muted-foreground">Toutes les actions sont à jour</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </AppLayout>

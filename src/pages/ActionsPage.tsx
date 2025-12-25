@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CreateActionDialog } from '@/components/dashboard/CreateActionDialog';
 import { 
@@ -228,39 +228,41 @@ export default function ActionsPage() {
               </TabsTrigger>
             </TabsList>
 
-            <div className="p-4">
-              <ScrollArea className="h-[calc(100vh-500px)]">
-                <TabsContent value="todo" className="m-0 space-y-3">
-                  {todoActions && todoActions.length > 0 ? (
-                    todoActions.map(renderActionCard)
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      Aucune action à faire
-                    </div>
-                  )}
-                </TabsContent>
+            <TabsContent value="todo" className="m-0 p-4">
+              <div className="space-y-3">
+                {todoActions && todoActions.length > 0 ? (
+                  todoActions.map(renderActionCard)
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Aucune action à faire
+                  </div>
+                )}
+              </div>
+            </TabsContent>
 
-                <TabsContent value="in_progress" className="m-0 space-y-3">
-                  {inProgressActions && inProgressActions.length > 0 ? (
-                    inProgressActions.map(renderActionCard)
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      Aucune action en cours
-                    </div>
-                  )}
-                </TabsContent>
+            <TabsContent value="in_progress" className="m-0 p-4">
+              <div className="space-y-3">
+                {inProgressActions && inProgressActions.length > 0 ? (
+                  inProgressActions.map(renderActionCard)
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Aucune action en cours
+                  </div>
+                )}
+              </div>
+            </TabsContent>
 
-                <TabsContent value="completed" className="m-0 space-y-3">
-                  {completedActions && completedActions.length > 0 ? (
-                    completedActions.map(renderActionCard)
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      Aucune action terminée
-                    </div>
-                  )}
-                </TabsContent>
-              </ScrollArea>
-            </div>
+            <TabsContent value="completed" className="m-0 p-4">
+              <div className="space-y-3">
+                {completedActions && completedActions.length > 0 ? (
+                  completedActions.map(renderActionCard)
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Aucune action terminée
+                  </div>
+                )}
+              </div>
+            </TabsContent>
           </Tabs>
         </CardContent>
       </Card>

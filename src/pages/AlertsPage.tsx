@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { 
   Bell, 
   AlertTriangle, 
@@ -104,62 +104,60 @@ export default function AlertsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[calc(100vh-400px)]">
-            {alerts && alerts.length > 0 ? (
-              <div className="space-y-3">
-                {alerts.map((alert) => {
-                  const config = severityConfig[alert.severity] || severityConfig.low;
-                  const Icon = config.icon;
+          {alerts && alerts.length > 0 ? (
+            <div className="space-y-3">
+              {alerts.map((alert) => {
+                const config = severityConfig[alert.severity] || severityConfig.low;
+                const Icon = config.icon;
 
-                  return (
-                    <div
-                      key={alert.id}
-                      className="p-4 rounded-lg border border-border/50 bg-card transition-all hover:shadow-md"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="outline" className={config.class}>
-                              <Icon className="h-3 w-3 mr-1" />
-                              {config.label}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {alert.type}
-                            </Badge>
-                          </div>
-                          <p className="text-foreground">{alert.message}</p>
-                          <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {format(new Date(alert.created_at), 'dd MMM yyyy HH:mm', { locale: fr })}
-                            </span>
-                          </div>
+                return (
+                  <div
+                    key={alert.id}
+                    className="p-4 rounded-lg border border-border/50 bg-card transition-all hover:shadow-md"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge variant="outline" className={config.class}>
+                            <Icon className="h-3 w-3 mr-1" />
+                            {config.label}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {alert.type}
+                          </Badge>
                         </div>
-                        
-                        {hasPermission(['admin', 'manager']) && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleMarkRead(alert.id)}
-                            className="flex-shrink-0"
-                          >
-                            <CheckCircle2 className="h-4 w-4 mr-1" />
-                            Marquer lu
-                          </Button>
-                        )}
+                        <p className="text-foreground">{alert.message}</p>
+                        <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {format(new Date(alert.created_at), 'dd MMM yyyy HH:mm', { locale: fr })}
+                          </span>
+                        </div>
                       </div>
+                      
+                      {hasPermission(['admin', 'manager']) && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleMarkRead(alert.id)}
+                          className="flex-shrink-0"
+                        >
+                          <CheckCircle2 className="h-4 w-4 mr-1" />
+                          Marquer lu
+                        </Button>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <CheckCircle2 className="h-12 w-12 text-[hsl(var(--status-green))] mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-foreground">Aucune alerte</h3>
-                <p className="text-sm text-muted-foreground">Tout fonctionne normalement</p>
-              </div>
-            )}
-          </ScrollArea>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <CheckCircle2 className="h-12 w-12 text-[hsl(var(--status-green))] mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-foreground">Aucune alerte</h3>
+              <p className="text-sm text-muted-foreground">Tout fonctionne normalement</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </AppLayout>
