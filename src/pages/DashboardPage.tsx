@@ -4,7 +4,10 @@ import { useCategories } from '@/hooks/useSfmData';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { SfmColumn } from '@/components/dashboard/SfmColumn';
 import { CreateActionDialog } from '@/components/dashboard/CreateActionDialog';
-
+import { CategoryDialog } from '@/components/admin/CategoryDialog';
+import { KpiDialog } from '@/components/admin/KpiDialog';
+import { DeleteConfirmDialog } from '@/components/admin/DeleteConfirmDialog';
+import { SfmCategory, Kpi } from '@/types/sfm';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,8 +24,16 @@ export default function DashboardPage() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
-  const [kpiDialogOpen, setKpiDialogOpen] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>();
+
+  // Category management
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<SfmCategory | null>(null);
+  const [deleteCategoryOpen, setDeleteCategoryOpen] = useState(false);
+
+  // KPI management
+  const [kpiDialogOpen, setKpiDialogOpen] = useState(false);
+  const [selectedKpi, setSelectedKpi] = useState<Kpi | null>(null);
 
   const handleAddAction = (categoryId?: string) => {
     setSelectedCategoryId(categoryId);
@@ -31,6 +42,26 @@ export default function DashboardPage() {
 
   const handleAddKpi = (categoryId?: string) => {
     setSelectedCategoryId(categoryId);
+    setSelectedKpi(null);
+    setKpiDialogOpen(true);
+  };
+
+  const handleEditCategory = (category: SfmCategory) => {
+    setSelectedCategory(category);
+    setCategoryDialogOpen(true);
+  };
+
+  const handleDeleteCategory = (categoryId: string) => {
+    const category = categories?.find(c => c.id === categoryId);
+    if (category) {
+      setSelectedCategory(category);
+      setDeleteCategoryOpen(true);
+    }
+  };
+
+  const handleEditKpi = (kpi: Kpi) => {
+    setSelectedKpi(kpi);
+    setSelectedCategoryId(kpi.category_id);
     setKpiDialogOpen(true);
   };
 
@@ -132,6 +163,9 @@ export default function DashboardPage() {
               category={category} 
               onAddAction={() => handleAddAction(category.id)}
               onAddKpi={() => handleAddKpi(category.id)}
+              onEditCategory={handleEditCategory}
+              onDeleteCategory={handleDeleteCategory}
+              onEditKpi={handleEditKpi}
             />
           ))}
         </div>
@@ -142,6 +176,29 @@ export default function DashboardPage() {
         onOpenChange={setActionDialogOpen}
         defaultCategoryId={selectedCategoryId}
       />
+
+      <CategoryDialog
+        open={categoryDialogOpen}
+        onOpenChange={setCategoryDialogOpen}
+        category={selectedCategory}
+      />
+
+      <KpiDialog
+        open={kpiDialogOpen}
+        onOpenChange={setKpiDialogOpen}
+        kpi={selectedKpi}
+        defaultCategoryId={selectedCategoryId}
+      />
+
+      {selectedCategory && (
+        <DeleteConfirmDialog
+          open={deleteCategoryOpen}
+          onOpenChange={setDeleteCategoryOpen}
+          itemType="category"
+          itemId={selectedCategory.id}
+          itemName={selectedCategory.name}
+        />
+      )}
     </AppLayout>
   );
 }

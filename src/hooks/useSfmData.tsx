@@ -78,6 +78,46 @@ export function useCreateKpi() {
   });
 }
 
+export function useUpdateKpi() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; name?: string; description?: string; unit?: string; target_value?: number }) => {
+      const { data, error } = await supabase
+        .from('kpis')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['kpis'] });
+      toast.success('KPI mis à jour');
+    },
+    onError: () => {
+      toast.error('Erreur lors de la mise à jour');
+    },
+  });
+}
+
+export function useDeleteKpi() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('kpis').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['kpis'] });
+      toast.success('KPI supprimé');
+    },
+    onError: () => {
+      toast.error('Erreur lors de la suppression');
+    },
+  });
+}
+
 export function useAddKpiValue() {
   const queryClient = useQueryClient();
   return useMutation({

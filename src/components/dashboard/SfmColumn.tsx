@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Shield, CheckCircle, DollarSign, Truck, TrendingUp, Users, AlertTriangle, Clock, Plus, Pencil } from 'lucide-react';
+import { Shield, CheckCircle, DollarSign, Truck, TrendingUp, Users, AlertTriangle, Clock, Plus, Pencil, Trash2, MoreHorizontal } from 'lucide-react';
 import { SfmCategory, Kpi, Action } from '@/types/sfm';
-import { useKpis, useCategoryStats, useActions } from '@/hooks/useSfmData';
+import { useKpis, useCategoryStats, useActions, useDeleteKpi } from '@/hooks/useSfmData';
 import { useAuth } from '@/hooks/useAuth';
 import { KpiChart } from './KpiChart';
 import { ActionCard } from './ActionCard';
@@ -10,6 +10,12 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'shield': Shield,
@@ -24,13 +30,17 @@ interface SfmColumnProps {
   category: SfmCategory;
   onAddAction?: () => void;
   onAddKpi?: () => void;
+  onEditCategory?: (category: SfmCategory) => void;
+  onDeleteCategory?: (categoryId: string) => void;
+  onEditKpi?: (kpi: Kpi) => void;
 }
 
-export function SfmColumn({ category, onAddAction, onAddKpi }: SfmColumnProps) {
+export function SfmColumn({ category, onAddAction, onAddKpi, onEditCategory, onDeleteCategory, onEditKpi }: SfmColumnProps) {
   const { role } = useAuth();
   const { data: kpis } = useKpis(category.id);
   const { data: stats } = useCategoryStats(category.id);
   const { data: actions } = useActions(category.id);
+  const deleteKpi = useDeleteKpi();
   
   const [selectedKpiId, setSelectedKpiId] = useState<string | null>(null);
   const [editActionOpen, setEditActionOpen] = useState(false);
@@ -41,13 +51,22 @@ export function SfmColumn({ category, onAddAction, onAddKpi }: SfmColumnProps) {
 
   const openActions = actions?.filter(a => a.status !== 'completed') || [];
 
-  // All roles except operator can manage
+  // All roles except operator can manage actions
   const canManage = role !== 'operator';
+  // Only admin can manage categories
+  const canManageCategories = role === 'admin';
+  // Admin and manager can manage KPIs
   const canManageKpis = role === 'admin' || role === 'manager';
 
   const handleEditAction = (action: Action) => {
     setSelectedAction(action);
     setEditActionOpen(true);
+  };
+
+  const handleDeleteKpi = (kpiId: string) => {
+    if (confirm('Supprimer cet indicateur KPI ?')) {
+      deleteKpi.mutate(kpiId);
+    }
   };
 
   return (
@@ -61,26 +80,50 @@ export function SfmColumn({ category, onAddAction, onAddKpi }: SfmColumnProps) {
         className="p-4 border-b border-border/30"
         style={{ borderBottomColor: `${category.color}30` }}
       >
-        <div className="flex items-center gap-3 mb-3">
-          <div 
-            className="p-2 rounded-lg"
-            style={{ backgroundColor: `${category.color}20` }}
-          >
-            <Icon className="h-5 w-5" style={{ color: category.color }} />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-foreground">{category.name}</h2>
-            <span 
-              className="text-xs font-mono font-semibold"
-              style={{ color: category.color }}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div 
+              className="p-2 rounded-lg"
+              style={{ backgroundColor: `${category.color}20` }}
             >
-              {category.code}
-            </span>
+              <Icon className="h-5 w-5" style={{ color: category.color }} />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-foreground">{category.name}</h2>
+              <span 
+                className="text-xs font-mono font-semibold"
+                style={{ color: category.color }}
+              >
+                {category.code}
+              </span>
+            </div>
           </div>
+          {canManageCategories && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onEditCategory?.(category)}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Modifier
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => onDeleteCategory?.(category.id)} 
+                  className="text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Supprimer
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         {/* Quick Stats */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mt-3">
           {stats?.overdueActions && stats.overdueActions > 0 ? (
             <Badge variant="destructive" className="text-xs gap-1">
               <AlertTriangle className="h-3 w-3" />
@@ -103,27 +146,53 @@ export function SfmColumn({ category, onAddAction, onAddKpi }: SfmColumnProps) {
             Indicateur KPI
           </span>
           {canManageKpis && (
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onAddKpi}>
-              <Plus className="h-3 w-3" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onAddKpi}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           )}
         </div>
         {kpis && kpis.length > 0 ? (
-          <Select 
-            value={selectedKpi?.id || ''} 
-            onValueChange={(value) => setSelectedKpiId(value)}
-          >
-            <SelectTrigger className="w-full bg-background/50">
-              <SelectValue placeholder="Sélectionner un KPI" />
-            </SelectTrigger>
-            <SelectContent>
-              {kpis.map((kpi) => (
-                <SelectItem key={kpi.id} value={kpi.id}>
-                  {kpi.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select 
+              value={selectedKpi?.id || ''} 
+              onValueChange={(value) => setSelectedKpiId(value)}
+            >
+              <SelectTrigger className="flex-1 bg-background/50">
+                <SelectValue placeholder="Sélectionner un KPI" />
+              </SelectTrigger>
+              <SelectContent>
+                {kpis.map((kpi) => (
+                  <SelectItem key={kpi.id} value={kpi.id}>
+                    {kpi.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {canManageKpis && selectedKpi && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onEditKpi?.(selectedKpi)}>
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Modifier
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => handleDeleteKpi(selectedKpi.id)} 
+                    className="text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Supprimer
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         ) : (
           <div className="text-sm text-muted-foreground text-center py-4">
             Aucun KPI configuré
