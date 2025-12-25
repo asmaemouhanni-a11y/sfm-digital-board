@@ -16,7 +16,6 @@ import {
   Settings, 
   Bell, 
   Shield, 
-  Palette, 
   Building2, 
   Mail,
   Save,
@@ -411,18 +410,8 @@ export default function SettingsPage() {
                   <p className="text-sm text-muted-foreground capitalize">
                     {role === 'admin' ? 'Administrateur' : 
                      role === 'manager' ? 'Manager' :
-                     role === 'team_leader' ? 'Chef d\'équipe' : 'Opérateur'}
+                     role === 'team_leader' ? "Chef d'équipe" : 'Opérateur'}
                   </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-              <div className="flex items-center gap-3">
-                <Palette className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Thème</p>
-                  <p className="text-sm text-muted-foreground">Sombre</p>
                 </div>
               </div>
             </div>
