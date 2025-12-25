@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { useActions, useCategories, useUpdateAction, useDeleteAction, useCreateAction } from '@/hooks/useSfmData';
+import { useActions, useCategories, useUpdateAction, useDeleteAction, useOverdueActions } from '@/hooks/useSfmData';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,19 +31,29 @@ const statusConfig = {
 };
 
 const priorityConfig = {
-  urgent: { label: 'Urgent', class: 'priority-urgent' },
-  high: { label: 'Haute', class: 'priority-high' },
-  medium: { label: 'Moyenne', class: 'priority-medium' },
-  low: { label: 'Basse', class: 'priority-low' },
+  urgent: { label: 'Urgent', class: 'priority-urgent', order: 0 },
+  high: { label: 'Haute', class: 'priority-high', order: 1 },
+  medium: { label: 'Moyenne', class: 'priority-medium', order: 2 },
+  low: { label: 'Basse', class: 'priority-low', order: 3 },
+};
+
+// Sort by priority
+const sortByPriority = (actions: any[]) => {
+  return [...actions].sort((a, b) => {
+    const orderA = priorityConfig[a.priority as keyof typeof priorityConfig]?.order ?? 99;
+    const orderB = priorityConfig[b.priority as keyof typeof priorityConfig]?.order ?? 99;
+    return orderA - orderB;
+  });
 };
 
 export default function ActionsPage() {
-  const [activeTab, setActiveTab] = useState<'todo' | 'in_progress' | 'completed'>('todo');
+  const [activeTab, setActiveTab] = useState<'todo' | 'in_progress' | 'completed' | 'overdue'>('todo');
   const [dialogOpen, setDialogOpen] = useState(false);
   
   const { data: todoActions, isLoading: todoLoading } = useActions(undefined, 'todo');
   const { data: inProgressActions, isLoading: progressLoading } = useActions(undefined, 'in_progress');
   const { data: completedActions, isLoading: completedLoading } = useActions(undefined, 'completed');
+  const { data: overdueActions, isLoading: overdueLoading } = useOverdueActions();
   const { data: categories } = useCategories();
   const { hasPermission, role } = useAuth();
   
@@ -122,7 +132,7 @@ export default function ActionsPage() {
                   <Play className="h-4 w-4" />
                 </Button>
               )}
-              {action.status === 'in_progress' && (
+              {(action.status === 'in_progress' || activeTab === 'overdue') && (
                 <Button
                   size="sm"
                   variant="outline"
@@ -146,7 +156,7 @@ export default function ActionsPage() {
     );
   };
 
-  const isLoading = todoLoading || progressLoading || completedLoading;
+  const isLoading = todoLoading || progressLoading || completedLoading || overdueLoading;
 
   if (isLoading) {
     return (
@@ -163,7 +173,19 @@ export default function ActionsPage() {
   return (
     <AppLayout title="Actions" subtitle="Gestion des actions et tâches">
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-destructive/10 text-destructive">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">En retard</p>
+              <p className="text-2xl font-bold text-destructive">{overdueActions?.length || 0}</p>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="border-border/50">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-xl bg-muted text-muted-foreground">
@@ -216,7 +238,10 @@ export default function ActionsPage() {
       <Card>
         <CardContent className="p-0">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-            <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0">
+            <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 flex-wrap">
+              <TabsTrigger value="overdue" className="rounded-none border-b-2 border-transparent data-[state=active]:border-destructive text-destructive">
+                En retard ({overdueActions?.length || 0})
+              </TabsTrigger>
               <TabsTrigger value="todo" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
                 À faire ({todoActions?.length || 0})
               </TabsTrigger>
@@ -228,10 +253,22 @@ export default function ActionsPage() {
               </TabsTrigger>
             </TabsList>
 
+            <TabsContent value="overdue" className="m-0 p-4">
+              <div className="space-y-3">
+                {overdueActions && overdueActions.length > 0 ? (
+                  sortByPriority(overdueActions).map(renderActionCard)
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Aucune action en retard
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
             <TabsContent value="todo" className="m-0 p-4">
               <div className="space-y-3">
                 {todoActions && todoActions.length > 0 ? (
-                  todoActions.map(renderActionCard)
+                  sortByPriority(todoActions).map(renderActionCard)
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     Aucune action à faire
@@ -243,7 +280,7 @@ export default function ActionsPage() {
             <TabsContent value="in_progress" className="m-0 p-4">
               <div className="space-y-3">
                 {inProgressActions && inProgressActions.length > 0 ? (
-                  inProgressActions.map(renderActionCard)
+                  sortByPriority(inProgressActions).map(renderActionCard)
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     Aucune action en cours
@@ -255,7 +292,7 @@ export default function ActionsPage() {
             <TabsContent value="completed" className="m-0 p-4">
               <div className="space-y-3">
                 {completedActions && completedActions.length > 0 ? (
-                  completedActions.map(renderActionCard)
+                  sortByPriority(completedActions).map(renderActionCard)
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     Aucune action terminée

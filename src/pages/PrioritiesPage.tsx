@@ -13,18 +13,17 @@ import {
   AlertTriangle, 
   CheckCircle2,
   Calendar,
-  User,
   ArrowUp
 } from 'lucide-react';
-import { format, isToday, isPast } from 'date-fns';
+import { format, isToday } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 const priorityConfig = {
-  urgent: { label: 'Urgent', class: 'priority-urgent', icon: AlertTriangle },
-  high: { label: 'Haute', class: 'priority-high', icon: ArrowUp },
-  medium: { label: 'Moyenne', class: 'priority-medium', icon: Target },
-  low: { label: 'Basse', class: 'priority-low', icon: Clock },
+  urgent: { label: 'Urgent', class: 'priority-urgent', icon: AlertTriangle, order: 0 },
+  high: { label: 'Haute', class: 'priority-high', icon: ArrowUp, order: 1 },
+  medium: { label: 'Moyenne', class: 'priority-medium', icon: Target, order: 2 },
+  low: { label: 'Basse', class: 'priority-low', icon: Clock, order: 3 },
 };
 
 export default function PrioritiesPage() {
@@ -32,9 +31,15 @@ export default function PrioritiesPage() {
   const { hasPermission } = useAuth();
   const updateAction = useUpdateAction();
 
-  const overdueCount = priorities?.filter(p => isPast(new Date(p.due_date)) && !isToday(new Date(p.due_date))).length || 0;
   const urgentCount = priorities?.filter(p => p.priority === 'urgent').length || 0;
   const highCount = priorities?.filter(p => p.priority === 'high').length || 0;
+
+  // Sort by priority (urgent first, then high, medium, low)
+  const sortedPriorities = priorities?.sort((a, b) => {
+    const orderA = priorityConfig[a.priority as keyof typeof priorityConfig]?.order ?? 99;
+    const orderB = priorityConfig[b.priority as keyof typeof priorityConfig]?.order ?? 99;
+    return orderA - orderB;
+  });
 
   const handleComplete = async (actionId: string) => {
     try {
@@ -47,7 +52,7 @@ export default function PrioritiesPage() {
 
   if (isLoading) {
     return (
-      <AppLayout title="Priorités du jour" subtitle="Actions urgentes et à traiter aujourd'hui">
+      <AppLayout title="Priorités du jour" subtitle="Actions à traiter aujourd'hui">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
             <Skeleton key={i} className="h-32 rounded-xl" />
@@ -58,21 +63,9 @@ export default function PrioritiesPage() {
   }
 
   return (
-    <AppLayout title="Priorités du jour" subtitle="Actions urgentes et à traiter aujourd'hui">
+    <AppLayout title="Priorités du jour" subtitle="Actions à traiter aujourd'hui">
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="border-destructive/30 bg-destructive/5">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-destructive/10 text-destructive">
-              <Clock className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">En retard</p>
-              <p className="text-2xl font-bold text-destructive">{overdueCount}</p>
-            </div>
-          </CardContent>
-        </Card>
-
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <Card className="border-[hsl(var(--status-orange))]/30 bg-[hsl(var(--status-orange))]/5">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-xl bg-[hsl(var(--status-orange))]/10 text-[hsl(var(--status-orange))]">
@@ -103,34 +96,28 @@ export default function PrioritiesPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5 text-primary" />
-            Liste des priorités ({priorities?.length || 0})
+            Actions du jour ({sortedPriorities?.length || 0})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {priorities && priorities.length > 0 ? (
+          {sortedPriorities && sortedPriorities.length > 0 ? (
             <div className="space-y-3">
-              {priorities.map((action) => {
-                const config = priorityConfig[action.priority || 'medium'];
+              {sortedPriorities.map((action) => {
+                const config = priorityConfig[action.priority as keyof typeof priorityConfig] || priorityConfig.medium;
                 const Icon = config.icon;
-                const isOverdue = isPast(new Date(action.due_date)) && !isToday(new Date(action.due_date));
 
                 return (
                   <div
                     key={action.id}
-                    className={`p-4 rounded-lg border ${isOverdue ? 'border-destructive/50 bg-destructive/5' : 'border-border/50 bg-card'} transition-all hover:shadow-md`}
+                    className="p-4 rounded-lg border border-border/50 bg-card transition-all hover:shadow-md"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
                           <Badge variant="outline" className={config.class}>
                             <Icon className="h-3 w-3 mr-1" />
                             {config.label}
                           </Badge>
-                          {isOverdue && (
-                            <Badge variant="destructive" className="text-xs">
-                              En retard
-                            </Badge>
-                          )}
                         </div>
                         <h3 className="font-semibold text-foreground">{action.title}</h3>
                         {action.description && (
@@ -164,7 +151,7 @@ export default function PrioritiesPage() {
             <div className="text-center py-12">
               <CheckCircle2 className="h-12 w-12 text-[hsl(var(--status-green))] mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-foreground">Aucune priorité</h3>
-              <p className="text-sm text-muted-foreground">Toutes les actions sont à jour</p>
+              <p className="text-sm text-muted-foreground">Aucune action prévue pour aujourd'hui</p>
             </div>
           )}
         </CardContent>

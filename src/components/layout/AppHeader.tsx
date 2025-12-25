@@ -1,4 +1,4 @@
-import { Bell, LogOut, User, ChevronDown, Settings } from 'lucide-react';
+import { Bell, LogOut, User, ChevronDown, Settings, Sun, Moon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useSmartAlerts } from '@/hooks/useSfmData';
@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useTheme } from 'next-themes';
 
 const roleLabels: Record<string, string> = {
   admin: 'Administrateur',
@@ -37,6 +38,7 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
   const navigate = useNavigate();
   const { profile, role, signOut, hasPermission } = useAuth();
   const { data: alerts } = useSmartAlerts();
+  const { theme, setTheme } = useTheme();
 
   const unreadAlerts = alerts?.length || 0;
   const initials = profile?.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
@@ -66,7 +68,18 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
         </div>
 
         {/* Right side */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
+          {/* Theme Toggle */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          >
+            <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            <span className="sr-only">Changer de thème</span>
+          </Button>
+
           {/* Alerts */}
           <Button 
             variant="ghost" 

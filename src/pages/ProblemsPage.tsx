@@ -29,10 +29,19 @@ const statusConfig = {
 };
 
 const severityConfig = {
-  critical: { label: 'Critique', class: 'bg-destructive text-destructive-foreground' },
-  high: { label: 'Haute', class: 'bg-[hsl(var(--status-orange))] text-white' },
-  medium: { label: 'Moyenne', class: 'bg-primary text-primary-foreground' },
-  low: { label: 'Basse', class: 'bg-muted text-muted-foreground' },
+  critical: { label: 'Critique', class: 'bg-destructive text-destructive-foreground', order: 0 },
+  high: { label: 'Haute', class: 'bg-[hsl(var(--status-orange))] text-white', order: 1 },
+  medium: { label: 'Moyenne', class: 'bg-primary text-primary-foreground', order: 2 },
+  low: { label: 'Basse', class: 'bg-muted text-muted-foreground', order: 3 },
+};
+
+// Sort by severity (critical first)
+const sortBySeverity = (problems: any[]) => {
+  return [...problems].sort((a, b) => {
+    const orderA = severityConfig[a.severity as keyof typeof severityConfig]?.order ?? 99;
+    const orderB = severityConfig[b.severity as keyof typeof severityConfig]?.order ?? 99;
+    return orderA - orderB;
+  });
 };
 
 export default function ProblemsPage() {
@@ -155,7 +164,7 @@ export default function ProblemsPage() {
   return (
     <AppLayout title="Problèmes" subtitle="Suivi et résolution des problèmes">
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <Card className="border-destructive/30 bg-destructive/5">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-xl bg-destructive/10 text-destructive">
@@ -218,7 +227,7 @@ export default function ProblemsPage() {
       <Card>
         <CardContent className="p-0">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-            <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0">
+            <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 flex-wrap">
               <TabsTrigger value="open" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary">
                 Ouverts ({openProblems?.length || 0})
               </TabsTrigger>
@@ -233,7 +242,7 @@ export default function ProblemsPage() {
             <TabsContent value="open" className="m-0 p-4">
               <div className="space-y-3">
                 {openProblems && openProblems.length > 0 ? (
-                  openProblems.map(renderProblemCard)
+                  sortBySeverity(openProblems).map(renderProblemCard)
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     Aucun problème ouvert
@@ -245,7 +254,7 @@ export default function ProblemsPage() {
             <TabsContent value="in_progress" className="m-0 p-4">
               <div className="space-y-3">
                 {inProgressProblems && inProgressProblems.length > 0 ? (
-                  inProgressProblems.map(renderProblemCard)
+                  sortBySeverity(inProgressProblems).map(renderProblemCard)
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     Aucun problème en cours
@@ -257,7 +266,7 @@ export default function ProblemsPage() {
             <TabsContent value="resolved" className="m-0 p-4">
               <div className="space-y-3">
                 {resolvedProblems && resolvedProblems.length > 0 ? (
-                  resolvedProblems.map(renderProblemCard)
+                  sortBySeverity(resolvedProblems).map(renderProblemCard)
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     Aucun problème résolu

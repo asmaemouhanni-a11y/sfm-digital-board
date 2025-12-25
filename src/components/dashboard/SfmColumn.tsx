@@ -53,9 +53,8 @@ export function SfmColumn({ category, onAddAction, onAddKpi, onEditCategory, onD
 
   // All roles except operator can manage actions
   const canManage = role !== 'operator';
-  // Only admin can manage categories
-  const canManageCategories = role === 'admin';
-  // Admin and manager can manage KPIs
+  // Admin and manager can manage categories and KPIs
+  const canManageCategories = role === 'admin' || role === 'manager';
   const canManageKpis = role === 'admin' || role === 'manager';
 
   const handleEditAction = (action: Action) => {
