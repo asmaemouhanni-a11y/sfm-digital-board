@@ -337,13 +337,13 @@ export function useNotes(categoryId?: string) {
     queryFn: async () => {
       let query = supabase
         .from('notes')
-        .select('*, category:sfm_categories(*)');
+        .select('*, category:sfm_categories(*), author:profiles!notes_created_by_fkey(*)');
       
       if (categoryId) {
         query = query.eq('category_id', categoryId);
       }
       
-      const { data, error } = await query.order('created_at', { ascending: false }).limit(50);
+      const { data, error } = await query.order('is_pinned', { ascending: false }).order('created_at', { ascending: false }).limit(100);
       if (error) throw error;
       return data as unknown as Note[];
     },
@@ -353,7 +353,7 @@ export function useNotes(categoryId?: string) {
 export function useCreateNote() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (note: { content: string; category_id?: string; created_by?: string }) => {
+    mutationFn: async (note: { title?: string; content: string; category_id?: string; is_pinned?: boolean; created_by?: string }) => {
       const { data, error } = await supabase.from('notes').insert(note).select().single();
       if (error) throw error;
       return data;
@@ -363,10 +363,51 @@ export function useCreateNote() {
       toast.success('Note ajoutée');
     },
     onError: () => {
-      toast.error('Erreur lors de l\'ajout');
+      toast.error("Erreur lors de l'ajout");
     },
   });
 }
+
+export function useUpdateNote() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; title?: string; content?: string; category_id?: string; is_pinned?: boolean }) => {
+      const { data, error } = await supabase
+        .from('notes')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+      toast.success('Note mise à jour');
+    },
+    onError: () => {
+      toast.error('Erreur lors de la mise à jour');
+    },
+  });
+}
+
+export function useDeleteNote() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('notes').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+      toast.success('Note supprimée');
+    },
+    onError: () => {
+      toast.error('Erreur lors de la suppression');
+    },
+  });
+}
+
 
 // Smart Alerts
 export function useSmartAlerts() {

@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
 import { useCreateNote, useCategories } from '@/hooks/useSfmData';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -19,6 +21,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -28,10 +31,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Pin } from 'lucide-react';
 
 const noteSchema = z.object({
-  content: z.string().min(1, 'Contenu requis').max(500, 'Maximum 500 caractères'),
+  title: z.string().max(100, 'Maximum 100 caractères').optional(),
+  content: z.string().min(1, 'Contenu requis').max(1000, 'Maximum 1000 caractères'),
   category_id: z.string().uuid().optional().nullable(),
+  is_pinned: z.boolean().default(false),
 });
 
 type NoteFormData = z.infer<typeof noteSchema>;
@@ -49,15 +55,19 @@ export function CreateNoteDialog({ open, onOpenChange }: CreateNoteDialogProps) 
   const form = useForm<NoteFormData>({
     resolver: zodResolver(noteSchema),
     defaultValues: {
+      title: '',
       content: '',
       category_id: null,
+      is_pinned: false,
     },
   });
 
   const onSubmit = async (data: NoteFormData) => {
     await createNote.mutateAsync({
+      title: data.title || undefined,
       content: data.content,
       category_id: data.category_id || undefined,
+      is_pinned: data.is_pinned,
       created_by: user?.id,
     });
     form.reset();
@@ -66,7 +76,7 @@ export function CreateNoteDialog({ open, onOpenChange }: CreateNoteDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[450px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Ajouter une note</DialogTitle>
           <DialogDescription>
@@ -78,15 +88,32 @@ export function CreateNoteDialog({ open, onOpenChange }: CreateNoteDialogProps) 
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Titre (optionnel)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Titre de la note..." 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="content"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Note</FormLabel>
+                  <FormLabel>Contenu</FormLabel>
                   <FormControl>
                     <Textarea 
                       placeholder="Votre note..." 
                       className="resize-none" 
-                      rows={4}
+                      rows={5}
                       {...field} 
                     />
                   </FormControl>
@@ -100,7 +127,7 @@ export function CreateNoteDialog({ open, onOpenChange }: CreateNoteDialogProps) 
               name="category_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Catégorie (optionnel)</FormLabel>
+                  <FormLabel>Catégorie SFM (optionnel)</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
                     <FormControl>
                       <SelectTrigger>
@@ -122,6 +149,30 @@ export function CreateNoteDialog({ open, onOpenChange }: CreateNoteDialogProps) 
                     </SelectContent>
                   </Select>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="is_pinned"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="flex items-center gap-2">
+                      <Pin className="h-4 w-4" />
+                      Épingler cette note
+                    </FormLabel>
+                    <FormDescription>
+                      Les notes épinglées apparaissent en premier
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
                 </FormItem>
               )}
             />
