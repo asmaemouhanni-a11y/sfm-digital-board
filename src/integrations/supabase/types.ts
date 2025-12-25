@@ -210,6 +210,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          is_pinned: boolean | null
+          title: string | null
         }
         Insert: {
           category_id?: string | null
@@ -217,6 +219,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          is_pinned?: boolean | null
+          title?: string | null
         }
         Update: {
           category_id?: string | null
@@ -224,6 +228,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          is_pinned?: boolean | null
+          title?: string | null
         }
         Relationships: [
           {

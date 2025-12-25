@@ -105,7 +105,9 @@ export interface Problem {
 export interface Note {
   id: string;
   category_id?: string;
+  title?: string;
   content: string;
+  is_pinned: boolean;
   created_by?: string;
   created_at: string;
   author?: Profile;
