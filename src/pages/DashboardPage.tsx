@@ -124,15 +124,17 @@ export default function DashboardPage() {
         <p className="text-sm text-muted-foreground">Sécurité, Qualité, Coût, Livraison, Performance, Humain</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4">
-        {categories?.map((category) => (
-          <SfmColumn 
-            key={category.id}
-            category={category} 
-            onAddAction={() => handleAddAction(category.id)}
-            onAddKpi={() => handleAddKpi(category.id)}
-          />
-        ))}
+      <div className="overflow-x-auto pb-4 -mx-4 px-4">
+        <div className="flex gap-4" style={{ minWidth: 'min-content' }}>
+          {categories?.map((category) => (
+            <SfmColumn 
+              key={category.id}
+              category={category} 
+              onAddAction={() => handleAddAction(category.id)}
+              onAddKpi={() => handleAddKpi(category.id)}
+            />
+          ))}
+        </div>
       </div>
 
       <CreateActionDialog
