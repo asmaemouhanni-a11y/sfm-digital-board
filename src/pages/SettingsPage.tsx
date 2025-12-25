@@ -11,18 +11,15 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { 
   Settings, 
   Bell, 
   Shield, 
   Building2, 
-  Mail,
   Save,
   Loader2,
-  User,
-  Camera
+  KeyRound
 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
@@ -106,11 +103,6 @@ export default function SettingsPage() {
     language: 'fr',
   });
 
-  const [profileData, setProfileData] = useState({
-    full_name: '',
-    avatar_url: '',
-  });
-
   // Update local state when data is fetched
   useEffect(() => {
     if (userSettings) {
@@ -122,15 +114,6 @@ export default function SettingsPage() {
       });
     }
   }, [userSettings]);
-
-  useEffect(() => {
-    if (profile) {
-      setProfileData({
-        full_name: profile.full_name || '',
-        avatar_url: profile.avatar_url || '',
-      });
-    }
-  }, [profile]);
 
   useEffect(() => {
     if (appSettingsData) {
@@ -199,35 +182,6 @@ export default function SettingsPage() {
     },
   });
 
-  // Save profile mutation
-  const saveProfileMutation = useMutation({
-    mutationFn: async (data: { full_name: string; avatar_url: string }) => {
-      if (!user?.id) throw new Error('User not authenticated');
-
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          full_name: data.full_name,
-          avatar_url: data.avatar_url,
-        })
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
-      toast.success('Profil mis à jour avec succès');
-    },
-    onError: (error) => {
-      console.error('Error saving profile:', error);
-      toast.error('Erreur lors de la sauvegarde du profil');
-    },
-  });
-
-  const handleSaveProfile = () => {
-    saveProfileMutation.mutate(profileData);
-  };
-
   const handleSaveNotifications = () => {
     saveNotificationsMutation.mutate(notifications);
   };
@@ -236,94 +190,11 @@ export default function SettingsPage() {
     saveAppSettingsMutation.mutate(appSettings);
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
   const isLoading = userSettingsLoading || (role === 'admin' && appSettingsLoading);
 
   return (
     <AppLayout title="Paramètres" subtitle="Configuration de l'application">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Profile Settings */}
-        <Card className="bg-card/50 border-border/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5 text-primary" />
-              Mon Profil
-            </CardTitle>
-            <CardDescription>
-              Gérez vos informations personnelles
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={profileData.avatar_url} alt={profileData.full_name} />
-                <AvatarFallback className="text-lg bg-primary/20 text-primary">
-                  {getInitials(profileData.full_name || 'U')}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <p className="text-sm font-medium">{profileData.full_name || 'Utilisateur'}</p>
-                <p className="text-sm text-muted-foreground">{profile?.email}</p>
-              </div>
-            </div>
-
-            <Separator />
-
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Nom complet</Label>
-              <Input
-                id="fullName"
-                value={profileData.full_name}
-                onChange={(e) => 
-                  setProfileData(prev => ({ ...prev, full_name: e.target.value }))
-                }
-                placeholder="Votre nom complet"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="avatarUrl">URL de l'avatar</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="avatarUrl"
-                  value={profileData.avatar_url}
-                  onChange={(e) => 
-                    setProfileData(prev => ({ ...prev, avatar_url: e.target.value }))
-                  }
-                  placeholder="https://exemple.com/avatar.jpg"
-                />
-                <Button variant="outline" size="icon" disabled>
-                  <Camera className="h-4 w-4" />
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Entrez l'URL d'une image pour votre avatar
-              </p>
-            </div>
-
-            <Button 
-              onClick={handleSaveProfile} 
-              className="w-full"
-              disabled={saveProfileMutation.isPending}
-            >
-              {saveProfileMutation.isPending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              Enregistrer le profil
-            </Button>
-          </CardContent>
-        </Card>
-
         {/* Notifications Settings */}
         <Card className="bg-card/50 border-border/50">
           <CardHeader>
@@ -514,35 +385,41 @@ export default function SettingsPage() {
               Sécurité
             </CardTitle>
             <CardDescription>
-              Informations sur votre compte et sécurité
+              Gérez la sécurité de votre compte
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-              <div className="flex items-center gap-3">
-                <Mail className="h-5 w-5 text-muted-foreground" />
+            <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
+              <div className="flex items-center gap-3 mb-3">
+                <KeyRound className="h-5 w-5 text-muted-foreground" />
                 <div>
-                  <p className="text-sm font-medium">Email</p>
-                  <p className="text-sm text-muted-foreground">{profile?.email}</p>
-                </div>
-              </div>
-              <Badge variant="outline" className="bg-[hsl(var(--status-green))]/20 text-[hsl(var(--status-green))] border-[hsl(var(--status-green))]/30">
-                Vérifié
-              </Badge>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-              <div className="flex items-center gap-3">
-                <Shield className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">Rôle</p>
-                  <p className="text-sm text-muted-foreground capitalize">
-                    {role === 'admin' ? 'Administrateur' : 
-                     role === 'manager' ? 'Manager' :
-                     role === 'team_leader' ? "Chef d'équipe" : 'Opérateur'}
+                  <p className="text-sm font-medium">Mot de passe oublié ?</p>
+                  <p className="text-sm text-muted-foreground">
+                    Réinitialisez votre mot de passe par email
                   </p>
                 </div>
               </div>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={async () => {
+                  if (!profile?.email) {
+                    toast.error('Email non disponible');
+                    return;
+                  }
+                  const { error } = await supabase.auth.resetPasswordForEmail(profile.email, {
+                    redirectTo: `${window.location.origin}/auth`,
+                  });
+                  if (error) {
+                    toast.error('Erreur lors de l\'envoi de l\'email');
+                  } else {
+                    toast.success('Email de réinitialisation envoyé !');
+                  }
+                }}
+              >
+                <KeyRound className="h-4 w-4 mr-2" />
+                Réinitialiser le mot de passe
+              </Button>
             </div>
           </CardContent>
         </Card>
