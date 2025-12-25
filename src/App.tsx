@@ -14,6 +14,7 @@ import AlertsPage from "./pages/AlertsPage";
 import ActionsPage from "./pages/ActionsPage";
 import ProblemsPage from "./pages/ProblemsPage";
 import NotesPage from "./pages/NotesPage";
+import ReportsPage from "./pages/ReportsPage";
 import UsersPage from "./pages/UsersPage";
 import SettingsPage from "./pages/SettingsPage";
 import AdminPage from "./pages/AdminPage";
@@ -39,6 +40,7 @@ const App = () => (
                 <Route path="/actions" element={<ActionsPage />} />
                 <Route path="/problems" element={<ProblemsPage />} />
                 <Route path="/notes" element={<NotesPage />} />
+                <Route path="/reports" element={<ReportsPage />} />
                 <Route path="/users" element={<UsersPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/admin" element={<AdminPage />} />

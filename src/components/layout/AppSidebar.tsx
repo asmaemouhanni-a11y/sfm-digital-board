@@ -10,7 +10,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Factory,
-  Users
+  Users,
+  FileBarChart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -32,6 +33,7 @@ const navItems: NavItem[] = [
   { title: 'Actions', href: '/actions', icon: CheckSquare },
   { title: 'Problèmes', href: '/problems', icon: AlertTriangle },
   { title: 'Notes', href: '/notes', icon: FileText },
+  { title: 'Rapports', href: '/reports', icon: FileBarChart },
 ];
 
 const adminItems: NavItem[] = [
