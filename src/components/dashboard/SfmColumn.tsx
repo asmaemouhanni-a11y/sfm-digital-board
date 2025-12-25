@@ -52,7 +52,7 @@ export function SfmColumn({ category, onAddAction, onAddKpi }: SfmColumnProps) {
 
   return (
     <div 
-      className="sfm-column flex flex-col h-full min-w-[320px] w-[320px]"
+      className="sfm-column flex flex-col h-full min-w-[360px] w-[360px]"
       data-code={category.code}
       style={{ '--category-color': category.color } as React.CSSProperties}
     >
@@ -157,7 +157,7 @@ export function SfmColumn({ category, onAddAction, onAddKpi }: SfmColumnProps) {
         </div>
         
         <ScrollArea className="flex-1 px-4 pb-4">
-          <div className="space-y-2">
+          <div className="space-y-3">
             {openActions.length > 0 ? (
               openActions.slice(0, 5).map((action) => (
                 <ActionCard 

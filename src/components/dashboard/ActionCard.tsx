@@ -70,19 +70,19 @@ export function ActionCard({ action, compact = false, onEdit }: ActionCardProps)
     return (
       <div 
         className={cn(
-          "industrial-card p-4 transition-all duration-200 group",
+          "industrial-card p-5 transition-all duration-200 group",
           isOverdue && "border-destructive/50",
           isDueToday && !isOverdue && "border-status-orange/50"
         )}
       >
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <StatusIcon className={cn("h-3.5 w-3.5 flex-shrink-0", status.color)} />
-              <span className="text-sm font-medium truncate">{action.title}</span>
+            <div className="flex items-center gap-2 mb-2">
+              <StatusIcon className={cn("h-4 w-4 flex-shrink-0", status.color)} />
+              <span className="text-base font-semibold">{action.title}</span>
             </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Calendar className="h-3 w-3" />
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Calendar className="h-4 w-4" />
               <span className={cn(
                 isOverdue && "text-destructive",
                 isDueToday && !isOverdue && "text-status-orange"
@@ -92,14 +92,14 @@ export function ActionCard({ action, compact = false, onEdit }: ActionCardProps)
               {action.responsible && (
                 <>
                   <span>•</span>
-                  <User className="h-3 w-3" />
+                  <User className="h-4 w-4" />
                   <span className="truncate">{action.responsible.full_name}</span>
                 </>
               )}
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <Badge variant="outline" className={cn("text-[10px] flex-shrink-0", priority.className)}>
+            <Badge variant="outline" className={cn("text-xs px-3 py-1 flex-shrink-0", priority.className)}>
               {priority.label}
             </Badge>
             {canManage && (
