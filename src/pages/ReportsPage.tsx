@@ -20,7 +20,8 @@ import {
   Target,
   TrendingUp,
   Loader2,
-  FileDown
+  FileDown,
+  CalendarRange
 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, getWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -28,10 +29,15 @@ import { toast } from 'sonner';
 import { generateSfmReport } from '@/lib/pdfReportGenerator';
 import { KpiValue } from '@/types/sfm';
 import { cn } from '@/lib/utils';
+import { DateRange } from 'react-day-picker';
 
 export default function ReportsPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [reportType, setReportType] = useState<'daily' | 'weekly'>('daily');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(),
+    to: new Date()
+  });
+  const [reportType, setReportType] = useState<'daily' | 'weekly' | 'custom'>('daily');
   const [isGenerating, setIsGenerating] = useState(false);
   
   const { data: categories, isLoading: categoriesLoading } = useCategories();
@@ -88,7 +94,10 @@ export default function ReportsPage() {
         actions,
         problems,
         reportType,
-        date: selectedDate,
+        date: reportType === 'custom' && dateRange?.from ? dateRange.from : selectedDate,
+        dateRange: reportType === 'custom' && dateRange?.from && dateRange?.to 
+          ? { from: dateRange.from, to: dateRange.to } 
+          : undefined,
         companyName: 'SFM Digital',
       });
 
@@ -104,11 +113,18 @@ export default function ReportsPage() {
   const getPeriodLabel = () => {
     if (reportType === 'daily') {
       return format(selectedDate, 'EEEE dd MMMM yyyy', { locale: fr });
-    } else {
+    } else if (reportType === 'weekly') {
       const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
       const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 1 });
       const weekNum = getWeek(selectedDate, { weekStartsOn: 1 });
       return `Semaine S${weekNum} (${format(weekStart, 'dd/MM')} - ${format(weekEnd, 'dd/MM/yyyy')})`;
+    } else {
+      if (dateRange?.from && dateRange?.to) {
+        return `${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to, 'dd/MM/yyyy')}`;
+      } else if (dateRange?.from) {
+        return `À partir du ${format(dateRange.from, 'dd/MM/yyyy')}`;
+      }
+      return 'Sélectionnez une période';
     }
   };
 
@@ -142,15 +158,19 @@ export default function ReportsPage() {
               {/* Report Type */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Type de rapport</label>
-                <Tabs value={reportType} onValueChange={(v) => setReportType(v as 'daily' | 'weekly')}>
-                  <TabsList className="w-full">
-                    <TabsTrigger value="daily" className="flex-1 gap-2">
-                      <Clock className="h-4 w-4" />
+                <Tabs value={reportType} onValueChange={(v) => setReportType(v as 'daily' | 'weekly' | 'custom')}>
+                  <TabsList className="w-full grid grid-cols-3">
+                    <TabsTrigger value="daily" className="gap-1.5 text-xs px-2">
+                      <Clock className="h-3.5 w-3.5" />
                       Quotidien
                     </TabsTrigger>
-                    <TabsTrigger value="weekly" className="flex-1 gap-2">
-                      <CalendarIcon className="h-4 w-4" />
-                      Hebdomadaire
+                    <TabsTrigger value="weekly" className="gap-1.5 text-xs px-2">
+                      <CalendarIcon className="h-3.5 w-3.5" />
+                      Hebdo
+                    </TabsTrigger>
+                    <TabsTrigger value="custom" className="gap-1.5 text-xs px-2">
+                      <CalendarRange className="h-3.5 w-3.5" />
+                      Période
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
@@ -158,14 +178,17 @@ export default function ReportsPage() {
 
               {/* Date Selection */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Date / Période</label>
+                <label className="text-sm font-medium">
+                  {reportType === 'custom' ? 'Période personnalisée' : 'Date / Période'}
+                </label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        !selectedDate && "text-muted-foreground"
+                        !selectedDate && reportType !== 'custom' && "text-muted-foreground",
+                        reportType === 'custom' && !dateRange?.from && "text-muted-foreground"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -173,13 +196,26 @@ export default function ReportsPage() {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={(date) => date && setSelectedDate(date)}
-                      locale={fr}
-                      initialFocus
-                    />
+                    {reportType === 'custom' ? (
+                      <Calendar
+                        mode="range"
+                        selected={dateRange}
+                        onSelect={setDateRange}
+                        locale={fr}
+                        initialFocus
+                        numberOfMonths={2}
+                        className="p-3 pointer-events-auto"
+                      />
+                    ) : (
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => date && setSelectedDate(date)}
+                        locale={fr}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    )}
                   </PopoverContent>
                 </Popover>
               </div>
