@@ -17,8 +17,9 @@ interface ReportData {
   kpiValues: Map<string, KpiValue[]>;
   actions: Action[];
   problems: Problem[];
-  reportType: 'daily' | 'weekly';
+  reportType: 'daily' | 'weekly' | 'custom';
   date: Date;
+  dateRange?: { from: Date; to: Date };
   companyName?: string;
 }
 
@@ -66,7 +67,7 @@ export function generateSfmReport(data: ReportData): void {
   let yPosition = margin;
 
   // Calculate period
-  const { startDate, endDate, periodLabel } = getPeriodInfo(data.date, data.reportType);
+  const { startDate, endDate, periodLabel } = getPeriodInfo(data.date, data.reportType, data.dateRange);
 
   // ===== PAGE 1: HEADER & SUMMARY =====
   
@@ -81,7 +82,7 @@ export function generateSfmReport(data: ReportData): void {
   
   doc.setFontSize(14);
   doc.setFont('helvetica', 'normal');
-  doc.text(data.reportType === 'daily' ? 'Quotidien' : 'Hebdomadaire', margin, 28);
+  doc.text(data.reportType === 'daily' ? 'Quotidien' : data.reportType === 'weekly' ? 'Hebdomadaire' : 'Période personnalisée', margin, 28);
   
   doc.setFontSize(10);
   doc.text(periodLabel, pageWidth - margin, 18, { align: 'right' });
@@ -385,19 +386,24 @@ export function generateSfmReport(data: ReportData): void {
   }
   
   // Save the PDF
-  const filename = `Rapport_SFM_${data.reportType === 'daily' ? 'Quotidien' : 'Hebdomadaire'}_${format(data.date, 'yyyy-MM-dd')}.pdf`;
+  const getFilenameType = () => {
+    if (data.reportType === 'daily') return 'Quotidien';
+    if (data.reportType === 'weekly') return 'Hebdomadaire';
+    return 'Periode';
+  };
+  const filename = `Rapport_SFM_${getFilenameType()}_${format(data.date, 'yyyy-MM-dd')}.pdf`;
   doc.save(filename);
 }
 
 // Helper functions
-function getPeriodInfo(date: Date, type: 'daily' | 'weekly') {
+function getPeriodInfo(date: Date, type: 'daily' | 'weekly' | 'custom', dateRange?: { from: Date; to: Date }) {
   if (type === 'daily') {
     return {
       startDate: startOfDay(date),
       endDate: endOfDay(date),
       periodLabel: `Journée du ${format(date, 'dd MMMM yyyy', { locale: fr })}`,
     };
-  } else {
+  } else if (type === 'weekly') {
     const weekStart = startOfWeek(date, { weekStartsOn: 1 });
     const weekEnd = endOfWeek(date, { weekStartsOn: 1 });
     const weekNum = getWeek(date, { weekStartsOn: 1 });
@@ -405,6 +411,15 @@ function getPeriodInfo(date: Date, type: 'daily' | 'weekly') {
       startDate: weekStart,
       endDate: weekEnd,
       periodLabel: `Semaine S${weekNum} (${format(weekStart, 'dd/MM')} - ${format(weekEnd, 'dd/MM/yyyy')})`,
+    };
+  } else {
+    // Custom period
+    const from = dateRange?.from || date;
+    const to = dateRange?.to || date;
+    return {
+      startDate: startOfDay(from),
+      endDate: endOfDay(to),
+      periodLabel: `Du ${format(from, 'dd/MM/yyyy')} au ${format(to, 'dd/MM/yyyy')}`,
     };
   }
 }
