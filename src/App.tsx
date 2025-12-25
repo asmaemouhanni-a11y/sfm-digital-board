@@ -14,6 +14,7 @@ import ActionsPage from "./pages/ActionsPage";
 import ProblemsPage from "./pages/ProblemsPage";
 import NotesPage from "./pages/NotesPage";
 import UsersPage from "./pages/UsersPage";
+import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
               <Route path="/problems" element={<ProblemsPage />} />
               <Route path="/notes" element={<NotesPage />} />
               <Route path="/users" element={<UsersPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
