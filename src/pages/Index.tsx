@@ -4,17 +4,22 @@ import { useAuth } from '@/hooks/useAuth';
 
 export default function Index() {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, loading, role } = useAuth();
 
   useEffect(() => {
     if (!loading) {
       if (user) {
-        navigate('/dashboard');
+        // Admin redirigé vers la page Utilisateurs, autres vers le Dashboard
+        if (role === 'admin') {
+          navigate('/users');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         navigate('/auth');
       }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, role, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">

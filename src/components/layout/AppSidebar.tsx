@@ -26,19 +26,21 @@ interface NavItem {
   requiredRole?: string[];
 }
 
-const navItems: NavItem[] = [
-  { title: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard },
-  { title: 'Priorités du jour', href: '/priorities', icon: Target },
-  { title: 'Alertes', href: '/alerts', icon: Bell },
-  { title: 'Actions', href: '/actions', icon: CheckSquare },
-  { title: 'Problèmes', href: '/problems', icon: AlertTriangle },
-  { title: 'Notes', href: '/notes', icon: FileText },
-  { title: 'Rapports', href: '/reports', icon: FileBarChart },
+// Pages opérationnelles - accessibles uniquement aux non-admins
+const operationalItems: NavItem[] = [
+  { title: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard, requiredRole: ['manager', 'team_leader', 'operator'] },
+  { title: 'Priorités du jour', href: '/priorities', icon: Target, requiredRole: ['manager', 'team_leader', 'operator'] },
+  { title: 'Alertes', href: '/alerts', icon: Bell, requiredRole: ['manager', 'team_leader', 'operator'] },
+  { title: 'Actions', href: '/actions', icon: CheckSquare, requiredRole: ['manager', 'team_leader', 'operator'] },
+  { title: 'Problèmes', href: '/problems', icon: AlertTriangle, requiredRole: ['manager', 'team_leader', 'operator'] },
+  { title: 'Notes', href: '/notes', icon: FileText, requiredRole: ['manager', 'team_leader', 'operator'] },
+  { title: 'Rapports', href: '/reports', icon: FileBarChart, requiredRole: ['manager', 'team_leader', 'operator'] },
 ];
 
+// Pages d'administration - accessibles selon le rôle
 const adminItems: NavItem[] = [
-  { title: 'Catégories & KPIs', href: '/admin', icon: Settings, requiredRole: ['admin'] },
   { title: 'Utilisateurs', href: '/users', icon: Users, requiredRole: ['admin'] },
+  { title: 'Catégories & KPIs', href: '/admin', icon: Settings, requiredRole: ['admin'] },
   { title: 'Paramètres', href: '/settings', icon: Settings, requiredRole: ['admin', 'manager'] },
 ];
 
@@ -126,8 +128,9 @@ export function AppSidebar() {
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
+          {/* Pages opérationnelles */}
           <div className="space-y-1">
-            {navItems.map(renderNavItem)}
+            {operationalItems.map(renderNavItem)}
           </div>
 
           {/* Admin Section */}
