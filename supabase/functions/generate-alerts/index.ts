@@ -25,16 +25,70 @@ Deno.serve(async (req) => {
     console.log('Starting alert generation...');
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // 1. Verify JWT token
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.log('Missing authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - missing authorization header' }), 
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 2. Create client with user context to verify authentication
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    // 3. Verify user authentication
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      console.log('Invalid token:', authError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - invalid token' }), 
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('User authenticated:', user.id);
+
+    // 4. Check if user has admin or manager role using service role for the check
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    
+    const { data: roleData, error: roleError } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
+
+    if (roleError) {
+      console.log('Error fetching user role:', roleError.message);
+      return new Response(
+        JSON.stringify({ error: 'Forbidden - unable to verify role' }), 
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!roleData || !['admin', 'manager'].includes(roleData.role)) {
+      console.log('User does not have required role:', roleData?.role);
+      return new Response(
+        JSON.stringify({ error: 'Forbidden - admin or manager role required' }), 
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('User role verified:', roleData.role);
+
+    // 5. Now proceed with alert generation using service role
     const today = new Date().toISOString().split('T')[0];
     const alertsToCreate: AlertData[] = [];
 
-    // 1. Check for KPI alerts (critical status or negative trend)
+    // Check for KPI alerts (critical status or negative trend)
     console.log('Checking KPI alerts...');
-    const { data: kpiValues, error: kpiError } = await supabase
+    const { data: kpiValues, error: kpiError } = await supabaseAdmin
       .from('kpi_values')
       .select(`
         id,
@@ -103,9 +157,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 2. Check for overdue actions
+    // Check for overdue actions
     console.log('Checking overdue actions...');
-    const { data: overdueActions, error: actionsError } = await supabase
+    const { data: overdueActions, error: actionsError } = await supabaseAdmin
       .from('actions')
       .select('id, title, due_date, priority, category_id')
       .lt('due_date', today)
@@ -128,9 +182,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 3. Check for critical/high priority actions due today
+    // Check for critical/high priority actions due today
     console.log('Checking urgent actions due today...');
-    const { data: urgentTodayActions, error: urgentError } = await supabase
+    const { data: urgentTodayActions, error: urgentError } = await supabaseAdmin
       .from('actions')
       .select('id, title, priority, category_id')
       .eq('due_date', today)
@@ -153,9 +207,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 4. Check for critical/high severity problems
+    // Check for critical/high severity problems
     console.log('Checking critical problems...');
-    const { data: criticalProblems, error: problemsError } = await supabase
+    const { data: criticalProblems, error: problemsError } = await supabaseAdmin
       .from('problems')
       .select('id, title, severity, category_id, created_at')
       .in('severity', ['critical', 'high'])
@@ -186,10 +240,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 5. Delete old read alerts (cleanup - older than 7 days)
+    // Delete old read alerts (cleanup - older than 7 days)
     console.log('Cleaning up old alerts...');
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await supabaseAdmin
       .from('smart_alerts')
       .delete()
       .eq('is_read', true)
@@ -199,10 +253,10 @@ Deno.serve(async (req) => {
       console.error('Error deleting old alerts:', deleteError);
     }
 
-    // 6. Check for existing alerts to avoid duplicates
+    // Check for existing alerts to avoid duplicates
     console.log(`Processing ${alertsToCreate.length} potential alerts...`);
     
-    const { data: existingAlerts, error: existingError } = await supabase
+    const { data: existingAlerts, error: existingError } = await supabaseAdmin
       .from('smart_alerts')
       .select('related_id, type')
       .eq('is_read', false);
@@ -222,9 +276,9 @@ Deno.serve(async (req) => {
 
     console.log(`Creating ${newAlerts.length} new alerts...`);
 
-    // 7. Insert new alerts
+    // Insert new alerts
     if (newAlerts.length > 0) {
-      const { error: insertError } = await supabase
+      const { error: insertError } = await supabaseAdmin
         .from('smart_alerts')
         .insert(newAlerts.map(alert => ({
           ...alert,
