@@ -9,6 +9,7 @@ interface AuthContextType {
   profile: Profile | null;
   role: AppRole | null;
   loading: boolean;
+  isPending: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName: string, role?: AppRole) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -30,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isPending, setIsPending] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -44,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setProfile(null);
           setRole(null);
+          setIsPending(false);
           setLoading(false);
         }
       }
@@ -70,7 +73,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ]);
 
       if (profileRes.data) {
-        setProfile(profileRes.data as Profile);
+        const profileData = profileRes.data as Profile & { status?: string };
+        setProfile(profileData);
+        setIsPending(profileData.status === 'pending');
       }
 
       if (roleRes.data) {
@@ -94,20 +99,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
-        data: { full_name: fullName, selected_role: selectedRole },
+        data: { full_name: fullName, role: selectedRole },
       },
     });
-
-    // After successful signup, update the role if not operator (default)
-    if (!error && data.user && selectedRole !== 'operator') {
-      // Wait for the trigger to create the default role, then update it
-      setTimeout(async () => {
-        await supabase
-          .from('user_roles')
-          .update({ role: selectedRole })
-          .eq('user_id', data.user!.id);
-      }, 1000);
-    }
 
     return { error: error as Error | null };
   };
@@ -118,6 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setProfile(null);
     setRole(null);
+    setIsPending(false);
   };
 
   const hasPermission = (requiredRole: AppRole | AppRole[]) => {
@@ -136,6 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       role,
       loading,
+      isPending,
       signIn,
       signUp,
       signOut,

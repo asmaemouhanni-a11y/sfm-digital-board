@@ -26,12 +26,16 @@ import {
   DollarSign,
   Truck,
   TrendingUp,
-  AlertTriangle
+  AlertTriangle,
+  UserPlus
 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { AppRole, SfmCategory } from '@/types/sfm';
 import { CategoryDialog } from '@/components/admin/CategoryDialog';
 import { DeleteConfirmDialog } from '@/components/admin/DeleteConfirmDialog';
+import { UserDialog } from '@/components/admin/UserDialog';
+import { DeleteUserDialog } from '@/components/admin/DeleteUserDialog';
+import { PendingUsersTab } from '@/components/admin/PendingUsersTab';
 
 interface UserWithRole {
   id: string;
@@ -40,6 +44,7 @@ interface UserWithRole {
   full_name: string;
   role: AppRole;
   created_at: string;
+  status?: string;
 }
 
 const ROLE_CONFIG: Record<AppRole, { label: string; color: string; icon: React.ElementType; description: string }> = {
@@ -47,25 +52,25 @@ const ROLE_CONFIG: Record<AppRole, { label: string; color: string; icon: React.E
     label: 'Administrateur', 
     color: 'bg-destructive/20 text-destructive border-destructive/30',
     icon: ShieldCheck,
-    description: 'Gestion des utilisateurs, Configuration des catégories SFM'
+    description: 'Gestion des utilisateurs uniquement'
   },
   manager: { 
     label: 'Manager', 
     color: 'bg-primary/20 text-primary border-primary/30',
     icon: Shield,
-    description: 'Accès complet au dashboard, Validation des actions, Suivi global des KPI'
+    description: 'Accès complet, validation des actions, Suivi global des KPI'
   },
   team_leader: { 
     label: 'Chef d\'équipe', 
     color: 'bg-[hsl(var(--status-orange))]/20 text-[hsl(var(--status-orange))] border-[hsl(var(--status-orange))]/30',
     icon: UserCog,
-    description: 'Gestion des actions de son équipe, Déclaration de problèmes, Consultation des priorités'
+    description: 'Gestion des actions, déclaration de problèmes'
   },
   operator: { 
     label: 'Opérateur', 
     color: 'bg-muted text-muted-foreground border-border',
     icon: Users,
-    description: 'Déclaration de problèmes, Consultation'
+    description: 'Déclaration de problèmes, consultation'
   },
 };
 
@@ -89,6 +94,13 @@ export default function UsersPage() {
   const [selectedCategory, setSelectedCategory] = useState<SfmCategory | null>(null);
   const [deleteItem, setDeleteItem] = useState<{ type: 'category' | 'kpi'; id: string; name: string } | null>(null);
 
+  // User management states
+  const [userDialogOpen, setUserDialogOpen] = useState(false);
+  const [userDialogMode, setUserDialogMode] = useState<'create' | 'edit'>('create');
+  const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
+  const [deleteUserDialogOpen, setDeleteUserDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<UserWithRole | null>(null);
+
   // Redirect non-admin users
   if (currentUserRole !== 'admin') {
     return <Navigate to="/dashboard" replace />;
@@ -99,7 +111,8 @@ export default function UsersPage() {
     queryFn: async () => {
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, user_id, email, full_name, created_at');
+        .select('id, user_id, email, full_name, created_at, status')
+        .eq('status', 'approved');
 
       if (profilesError) throw profilesError;
 
@@ -127,6 +140,18 @@ export default function UsersPage() {
         .order('display_order');
       if (error) throw error;
       return data as SfmCategory[];
+    },
+  });
+
+  const { data: pendingCount } = useQuery({
+    queryKey: ['pending-users-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      if (error) throw error;
+      return count || 0;
     },
   });
 
@@ -176,6 +201,23 @@ export default function UsersPage() {
     setDeleteDialogOpen(true);
   };
 
+  const handleCreateUser = () => {
+    setSelectedUser(null);
+    setUserDialogMode('create');
+    setUserDialogOpen(true);
+  };
+
+  const handleEditUser = (user: UserWithRole) => {
+    setSelectedUser(user);
+    setUserDialogMode('edit');
+    setUserDialogOpen(true);
+  };
+
+  const handleDeleteUser = (user: UserWithRole) => {
+    setUserToDelete(user);
+    setDeleteUserDialogOpen(true);
+  };
+
   return (
     <AppLayout title="Administration" subtitle="Gestion des utilisateurs et configuration">
       <Tabs defaultValue="users" className="space-y-6">
@@ -183,6 +225,15 @@ export default function UsersPage() {
           <TabsTrigger value="users" className="gap-2">
             <Users className="h-4 w-4" />
             Utilisateurs
+          </TabsTrigger>
+          <TabsTrigger value="pending" className="gap-2 relative">
+            <UserPlus className="h-4 w-4" />
+            En attente
+            {pendingCount && pendingCount > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                {pendingCount}
+              </Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="categories" className="gap-2">
             <LayoutGrid className="h-4 w-4" />
@@ -218,14 +269,20 @@ export default function UsersPage() {
 
           {/* Users Table */}
           <Card className="bg-card/50 border-border/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Liste des utilisateurs
-              </CardTitle>
-              <CardDescription>
-                Gérez les rôles et permissions des utilisateurs de l'application
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Liste des utilisateurs
+                </CardTitle>
+                <CardDescription>
+                  Gérez les rôles et permissions des utilisateurs de l'application
+                </CardDescription>
+              </div>
+              <Button onClick={handleCreateUser}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nouvel utilisateur
+              </Button>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -243,6 +300,7 @@ export default function UsersPage() {
                       <TableHead>Rôle actuel</TableHead>
                       <TableHead>Modifier le rôle</TableHead>
                       <TableHead>Date d'inscription</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -295,6 +353,27 @@ export default function UsersPage() {
                           <TableCell className="text-muted-foreground text-sm">
                             {new Date(user.created_at).toLocaleDateString('fr-FR')}
                           </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                onClick={() => handleEditUser(user)}
+                                disabled={isCurrentUser}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => handleDeleteUser(user)}
+                                disabled={isCurrentUser}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       );
                     })}
@@ -303,6 +382,11 @@ export default function UsersPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Pending Users Tab */}
+        <TabsContent value="pending">
+          <PendingUsersTab />
         </TabsContent>
 
         {/* Categories Tab */}
@@ -409,6 +493,19 @@ export default function UsersPage() {
           itemName={deleteItem.name}
         />
       )}
+
+      <UserDialog
+        open={userDialogOpen}
+        onOpenChange={setUserDialogOpen}
+        user={selectedUser}
+        mode={userDialogMode}
+      />
+
+      <DeleteUserDialog
+        open={deleteUserDialogOpen}
+        onOpenChange={setDeleteUserDialogOpen}
+        user={userToDelete}
+      />
     </AppLayout>
   );
 }

@@ -24,10 +24,13 @@ export type Database = {
           due_date: string
           id: string
           priority: Database["public"]["Enums"]["action_priority"] | null
+          requires_validation: boolean | null
           responsible_id: string | null
           status: Database["public"]["Enums"]["action_status"] | null
           title: string
           updated_at: string
+          validated_at: string | null
+          validated_by: string | null
         }
         Insert: {
           category_id: string
@@ -38,10 +41,13 @@ export type Database = {
           due_date: string
           id?: string
           priority?: Database["public"]["Enums"]["action_priority"] | null
+          requires_validation?: boolean | null
           responsible_id?: string | null
           status?: Database["public"]["Enums"]["action_status"] | null
           title: string
           updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
         }
         Update: {
           category_id?: string
@@ -52,10 +58,13 @@ export type Database = {
           due_date?: string
           id?: string
           priority?: Database["public"]["Enums"]["action_priority"] | null
+          requires_validation?: boolean | null
           responsible_id?: string | null
           status?: Database["public"]["Enums"]["action_status"] | null
           title?: string
           updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
         }
         Relationships: [
           {
@@ -301,6 +310,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          status: string
           updated_at: string
           user_id: string
         }
@@ -310,6 +320,7 @@ export type Database = {
           email: string
           full_name: string
           id?: string
+          status?: string
           updated_at?: string
           user_id: string
         }
@@ -319,6 +330,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          status?: string
           updated_at?: string
           user_id?: string
         }

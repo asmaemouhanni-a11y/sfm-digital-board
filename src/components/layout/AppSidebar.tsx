@@ -26,20 +26,29 @@ interface NavItem {
   requiredRole?: string[];
 }
 
-// Pages opérationnelles - accessibles uniquement aux non-admins
-const operationalItems: NavItem[] = [
+// Pages pour opérateurs - accès limité
+const operatorItems: NavItem[] = [
   { title: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard, requiredRole: ['manager', 'team_leader', 'operator'] },
   { title: 'Priorités du jour', href: '/priorities', icon: Target, requiredRole: ['manager', 'team_leader', 'operator'] },
-  { title: 'Alertes', href: '/alerts', icon: Bell, requiredRole: ['manager', 'team_leader', 'operator'] },
-  { title: 'Actions', href: '/actions', icon: CheckSquare, requiredRole: ['manager', 'team_leader', 'operator'] },
   { title: 'Problèmes', href: '/problems', icon: AlertTriangle, requiredRole: ['manager', 'team_leader', 'operator'] },
-  { title: 'Notes', href: '/notes', icon: FileText, requiredRole: ['manager', 'team_leader', 'operator'] },
-  { title: 'Rapports', href: '/reports', icon: FileBarChart, requiredRole: ['manager', 'team_leader', 'operator'] },
 ];
 
-// Pages d'administration - accessibles selon le rôle
+// Pages supplémentaires pour chef d'équipe et manager
+const teamLeaderItems: NavItem[] = [
+  { title: 'Alertes', href: '/alerts', icon: Bell, requiredRole: ['manager', 'team_leader'] },
+  { title: 'Actions', href: '/actions', icon: CheckSquare, requiredRole: ['manager', 'team_leader'] },
+  { title: 'Notes', href: '/notes', icon: FileText, requiredRole: ['manager', 'team_leader'] },
+  { title: 'Rapports', href: '/reports', icon: FileBarChart, requiredRole: ['manager'] },
+];
+
+// Pages d'administration - uniquement pour admin
 const adminItems: NavItem[] = [
   { title: 'Utilisateurs', href: '/users', icon: Users, requiredRole: ['admin'] },
+  { title: 'Paramètres', href: '/settings', icon: Settings, requiredRole: ['admin'] },
+];
+
+// Pages pour manager
+const managerItems: NavItem[] = [
   { title: 'Catégories & KPIs', href: '/admin', icon: Settings, requiredRole: ['manager'] },
   { title: 'Paramètres', href: '/settings', icon: Settings, requiredRole: ['manager'] },
 ];
@@ -47,12 +56,12 @@ const adminItems: NavItem[] = [
 export function AppSidebar() {
   const { collapsed, toggle } = useSidebar();
   const location = useLocation();
-  const { hasPermission } = useAuth();
+  const { hasPermission, role } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
   const renderNavItem = (item: NavItem) => {
-    if (item.requiredRole && !hasPermission(item.requiredRole as any)) {
+    if (item.requiredRole && !item.requiredRole.includes(role || '')) {
       return null;
     }
 
@@ -99,6 +108,12 @@ export function AppSidebar() {
     );
   };
 
+  // Admin voit uniquement ses pages
+  const isAdmin = role === 'admin';
+  const isManager = role === 'manager';
+  const isTeamLeader = role === 'team_leader';
+  const isOperator = role === 'operator';
+
   return (
     <TooltipProvider>
       <aside
@@ -128,24 +143,42 @@ export function AppSidebar() {
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
-          {/* Pages opérationnelles */}
-          <div className="space-y-1">
-            {operationalItems.map(renderNavItem)}
-          </div>
+          {/* Admin Section - uniquement pour admin */}
+          {isAdmin && (
+            <div className="space-y-1">
+              {adminItems.map(renderNavItem)}
+            </div>
+          )}
 
-          {/* Admin Section */}
-          {hasPermission(['admin', 'manager']) && (
+          {/* Pages opérationnelles - pour tous sauf admin */}
+          {!isAdmin && (
             <>
-              <div className="pt-4 pb-2">
-                {!collapsed && (
-                  <span className="px-3 text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider">
-                    Administration
-                  </span>
-                )}
-              </div>
               <div className="space-y-1">
-                {adminItems.map(renderNavItem)}
+                {operatorItems.map(renderNavItem)}
               </div>
+
+              {/* Pages chef d'équipe et manager */}
+              {(isTeamLeader || isManager) && (
+                <div className="space-y-1 pt-2">
+                  {teamLeaderItems.map(renderNavItem)}
+                </div>
+              )}
+
+              {/* Pages manager */}
+              {isManager && (
+                <>
+                  <div className="pt-4 pb-2">
+                    {!collapsed && (
+                      <span className="px-3 text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider">
+                        Administration
+                      </span>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    {managerItems.map(renderNavItem)}
+                  </div>
+                </>
+              )}
             </>
           )}
         </nav>

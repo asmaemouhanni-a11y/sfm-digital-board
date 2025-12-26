@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Factory, Shield, TrendingUp, Users, Crown, Briefcase, HardHat, Wrench } from 'lucide-react';
+import { Factory, Shield, TrendingUp, Users, Briefcase, HardHat, Wrench, Clock, LogOut } from 'lucide-react';
 import { z } from 'zod';
 import { AppRole } from '@/types/sfm';
 
@@ -27,11 +27,10 @@ const signupSchema = z.object({
   fullName: z.string().min(2, 'Nom requis (2 caractères minimum)'),
   email: z.string().email('Email invalide'),
   password: z.string().min(6, 'Mot de passe: 6 caractères minimum'),
-  role: z.enum(['admin', 'manager', 'team_leader', 'operator']),
+  role: z.enum(['manager', 'team_leader', 'operator']),
 });
 
-const roleLabels: Record<AppRole, { label: string; description: string; icon: React.ReactNode }> = {
-  admin: { label: 'Administrateur', description: 'Accès complet', icon: <Crown className="h-4 w-4" /> },
+const roleLabels: Record<Exclude<AppRole, 'admin'>, { label: string; description: string; icon: React.ReactNode }> = {
   manager: { label: 'Manager / Superviseur', description: 'Suivi global des KPI', icon: <Briefcase className="h-4 w-4" /> },
   team_leader: { label: 'Chef d\'équipe', description: 'Gestion des actions', icon: <HardHat className="h-4 w-4" /> },
   operator: { label: 'Opérateur', description: 'Consultation', icon: <Wrench className="h-4 w-4" /> },
@@ -39,8 +38,9 @@ const roleLabels: Record<AppRole, { label: string; description: string; icon: Re
 
 export default function Auth() {
   const navigate = useNavigate();
-  const { user, signUp, signIn, loading } = useAuth();
+  const { user, signUp, signIn, signOut, loading, isPending, role } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(false);
 
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -48,13 +48,13 @@ export default function Auth() {
   const [signupName, setSignupName] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
-  const [signupRole, setSignupRole] = useState<AppRole>('operator');
+  const [signupRole, setSignupRole] = useState<Exclude<AppRole, 'admin'>>('operator');
 
   useEffect(() => {
-    if (user && !loading) {
+    if (user && !loading && !isPending) {
       navigate('/');
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, isPending, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,9 +78,6 @@ export default function Auth() {
       } else {
         toast.error('Erreur de connexion');
       }
-    } else {
-      toast.success('Connexion réussie');
-      navigate('/');
     }
   };
 
@@ -107,15 +104,90 @@ export default function Auth() {
         toast.error('Erreur lors de l\'inscription');
       }
     } else {
-      toast.success('Compte créé avec succès');
-      navigate('/');
+      setSignupSuccess(true);
+      toast.success('Inscription réussie ! En attente de validation.');
     }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    setSignupSuccess(false);
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Show pending approval screen
+  if (user && isPending) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-8">
+        <Card className="w-full max-w-md border-border shadow-lg">
+          <CardHeader className="text-center">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="p-3 rounded-xl bg-[hsl(var(--status-orange))]/10 border border-[hsl(var(--status-orange))]/20">
+                <Clock className="h-8 w-8 text-[hsl(var(--status-orange))]" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl">En attente de validation</CardTitle>
+            <CardDescription className="text-base mt-2">
+              Votre inscription a été enregistrée avec succès.
+              <br />
+              Un administrateur doit valider votre compte avant que vous puissiez accéder à l'application.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-muted/50 rounded-lg p-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                Vous recevrez l'accès dès qu'un administrateur aura approuvé votre demande.
+              </p>
+            </div>
+            <Button variant="outline" className="w-full" onClick={handleSignOut}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Se déconnecter
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show signup success screen
+  if (signupSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-8">
+        <Card className="w-full max-w-md border-border shadow-lg">
+          <CardHeader className="text-center">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20">
+                <Clock className="h-8 w-8 text-green-500" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl">Inscription réussie !</CardTitle>
+            <CardDescription className="text-base mt-2">
+              Votre demande d'inscription a été envoyée.
+              <br />
+              Un administrateur doit valider votre compte.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              className="w-full" 
+              onClick={() => {
+                setSignupSuccess(false);
+                setSignupName('');
+                setSignupEmail('');
+                setSignupPassword('');
+              }}
+            >
+              Retour à la connexion
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -276,12 +348,12 @@ export default function Auth() {
                   </div>
                   <div className="space-y-2">
                     <Label>Rôle</Label>
-                    <Select value={signupRole} onValueChange={(value: AppRole) => setSignupRole(value)}>
+                    <Select value={signupRole} onValueChange={(value: Exclude<AppRole, 'admin'>) => setSignupRole(value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Sélectionnez votre rôle" />
                       </SelectTrigger>
                       <SelectContent>
-                        {(Object.keys(roleLabels) as AppRole[]).map((role) => (
+                        {(Object.keys(roleLabels) as Exclude<AppRole, 'admin'>[]).map((role) => (
                           <SelectItem key={role} value={role}>
                             <div className="flex items-center gap-2">
                               {roleLabels[role].icon}
@@ -296,6 +368,9 @@ export default function Auth() {
                         ))}
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Note: Votre inscription devra être validée par un administrateur
+                    </p>
                   </div>
                   <Button type="submit" className="w-full" disabled={isSubmitting}>
                     {isSubmitting ? 'Création...' : 'Créer un compte'}
