@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { Clock, CheckCircle, XCircle, UserPlus } from 'lucide-react';
@@ -15,6 +15,7 @@ interface PendingUser {
   user_id: string;
   email: string;
   full_name: string;
+  avatar_url: string | null;
   created_at: string;
   role: AppRole;
 }
@@ -34,7 +35,7 @@ export function PendingUsersTab() {
     queryFn: async () => {
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, user_id, email, full_name, created_at')
+        .select('id, user_id, email, full_name, avatar_url, created_at')
         .eq('status', 'pending');
 
       if (profilesError) throw profilesError;
@@ -76,22 +77,17 @@ export function PendingUsersTab() {
 
   const rejectMutation = useMutation({
     mutationFn: async (userId: string) => {
-      // Delete user role
-      await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId);
-
-      // Delete profile
+      // Update profile status to rejected instead of deleting
       const { error } = await supabase
         .from('profiles')
-        .delete()
+        .update({ status: 'rejected' })
         .eq('user_id', userId);
 
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pending-users'] });
+      queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
       toast.success('Inscription rejetée');
     },
     onError: (error) => {
@@ -155,6 +151,7 @@ export function PendingUsersTab() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
+                        {user.avatar_url && <AvatarImage src={user.avatar_url} alt={user.full_name} />}
                         <AvatarFallback className="bg-primary/10 text-primary text-sm">
                           {getInitials(user.full_name)}
                         </AvatarFallback>

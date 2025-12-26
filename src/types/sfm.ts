@@ -14,6 +14,7 @@ export interface Profile {
   full_name: string;
   email: string;
   avatar_url?: string;
+  status: 'pending' | 'approved' | 'rejected';
   created_at: string;
   updated_at: string;
 }

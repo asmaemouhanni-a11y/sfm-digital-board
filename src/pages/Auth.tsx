@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -13,10 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { Factory, Shield, TrendingUp, Users, Briefcase, HardHat, Wrench, Clock, LogOut } from 'lucide-react';
+import { Factory, Shield, TrendingUp, Users, Briefcase, HardHat, Wrench, Clock, LogOut, Camera, X } from 'lucide-react';
 import { z } from 'zod';
 import { AppRole } from '@/types/sfm';
+import { supabase } from '@/integrations/supabase/client';
 
 const loginSchema = z.object({
   email: z.string().email('Email invalide'),
@@ -38,9 +40,10 @@ const roleLabels: Record<Exclude<AppRole, 'admin'>, { label: string; description
 
 export default function Auth() {
   const navigate = useNavigate();
-  const { user, signUp, signIn, signOut, loading, isPending, role } = useAuth();
+  const { user, signUp, signIn, signOut, loading, isPending, profile } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signupSuccess, setSignupSuccess] = useState(false);
+  const [activeTab, setActiveTab] = useState('login');
 
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -49,12 +52,39 @@ export default function Auth() {
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupRole, setSignupRole] = useState<Exclude<AppRole, 'admin'>>('operator');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (user && !loading && !isPending) {
+    if (user && !loading && !isPending && profile?.status === 'approved') {
       navigate('/');
     }
-  }, [user, loading, isPending, navigate]);
+  }, [user, loading, isPending, profile, navigate]);
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('La photo ne doit pas dépasser 2 Mo');
+        return;
+      }
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeAvatar = () => {
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,19 +124,44 @@ export default function Auth() {
     }
 
     setIsSubmitting(true);
-    const { error } = await signUp(signupEmail, signupPassword, signupName, signupRole);
-    setIsSubmitting(false);
-
+    const { error, data } = await signUp(signupEmail, signupPassword, signupName, signupRole);
+    
     if (error) {
+      setIsSubmitting(false);
       if (error.message.includes('already registered')) {
         toast.error('Cet email est déjà enregistré');
       } else {
         toast.error('Erreur lors de l\'inscription');
       }
-    } else {
-      setSignupSuccess(true);
-      toast.success('Inscription réussie ! En attente de validation.');
+      return;
     }
+
+    // Upload avatar if provided
+    if (avatarFile && data?.user) {
+      const fileExt = avatarFile.name.split('.').pop();
+      const filePath = `${data.user.id}/avatar.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, avatarFile, { upsert: true });
+      
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(filePath);
+        
+        // Update profile with avatar URL
+        await supabase
+          .from('profiles')
+          .update({ avatar_url: urlData.publicUrl })
+          .eq('user_id', data.user.id);
+      }
+    }
+
+    setIsSubmitting(false);
+    setSignupSuccess(true);
+    setActiveTab('login');
+    toast.success('Inscription réussie ! Veuillez attendre la validation par un administrateur.');
   };
 
   const handleSignOut = async () => {
@@ -122,7 +177,7 @@ export default function Auth() {
     );
   }
 
-  // Show pending approval screen
+  // Show pending approval screen - block access if pending
   if (user && isPending) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-8">
@@ -133,17 +188,51 @@ export default function Auth() {
                 <Clock className="h-8 w-8 text-[hsl(var(--status-orange))]" />
               </div>
             </div>
-            <CardTitle className="text-2xl">En attente de validation</CardTitle>
+            <CardTitle className="text-2xl">Compte en attente de validation</CardTitle>
             <CardDescription className="text-base mt-2">
-              Votre inscription a été enregistrée avec succès.
+              Votre compte n'a pas encore été validé par un administrateur.
               <br />
-              Un administrateur doit valider votre compte avant que vous puissiez accéder à l'application.
+              Vous ne pouvez pas accéder à l'application tant que votre inscription n'est pas approuvée.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="bg-muted/50 rounded-lg p-4 text-center">
               <p className="text-sm text-muted-foreground">
-                Vous recevrez l'accès dès qu'un administrateur aura approuvé votre demande.
+                Veuillez patienter. Un administrateur examinera votre demande.
+              </p>
+            </div>
+            <Button variant="outline" className="w-full" onClick={handleSignOut}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Se déconnecter
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
+  // Show rejected screen
+  if (user && profile?.status === 'rejected') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-8">
+        <Card className="w-full max-w-md border-border shadow-lg">
+          <CardHeader className="text-center">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20">
+                <X className="h-8 w-8 text-destructive" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl">Inscription refusée</CardTitle>
+            <CardDescription className="text-base mt-2">
+              Votre demande d'inscription a été refusée par un administrateur.
+              <br />
+              Vous ne pouvez pas accéder à l'application.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-muted/50 rounded-lg p-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                Contactez un administrateur si vous pensez qu'il s'agit d'une erreur.
               </p>
             </div>
             <Button variant="outline" className="w-full" onClick={handleSignOut}>
@@ -275,7 +364,7 @@ export default function Auth() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="login" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="login">Connexion</TabsTrigger>
                 <TabsTrigger value="signup">Inscription</TabsTrigger>
@@ -368,10 +457,57 @@ export default function Auth() {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                  
+                  {/* Photo upload - optional */}
+                  <div className="space-y-2">
+                    <Label>Photo de profil (facultatif)</Label>
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-16 w-16">
+                        {avatarPreview && <AvatarImage src={avatarPreview} alt="Prévisualisation" />}
+                        <AvatarFallback className="bg-muted">
+                          <Camera className="h-6 w-6 text-muted-foreground" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col gap-2">
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          accept="image/*"
+                          onChange={handleAvatarChange}
+                          className="hidden"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <Camera className="h-4 w-4 mr-2" />
+                          Choisir une photo
+                        </Button>
+                        {avatarFile && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={removeAvatar}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Supprimer
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      Note: Votre inscription devra être validée par un administrateur
+                      Max 2 Mo. Formats: JPG, PNG, GIF
                     </p>
                   </div>
+                  
+                  <p className="text-xs text-muted-foreground text-center bg-muted/50 p-2 rounded-lg">
+                    Note: Votre inscription devra être validée par un administrateur avant de pouvoir vous connecter.
+                  </p>
                   <Button type="submit" className="w-full" disabled={isSubmitting}>
                     {isSubmitting ? 'Création...' : 'Créer un compte'}
                   </Button>

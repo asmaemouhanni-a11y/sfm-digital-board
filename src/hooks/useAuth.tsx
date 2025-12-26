@@ -11,7 +11,7 @@ interface AuthContextType {
   loading: boolean;
   isPending: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string, role?: AppRole) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string, role?: AppRole) => Promise<{ error: Error | null; data: { user: { id: string } | null } | null }>;
   signOut: () => Promise<void>;
   hasPermission: (requiredRole: AppRole | AppRole[]) => boolean;
 }
@@ -103,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     });
 
-    return { error: error as Error | null };
+    return { error: error as Error | null, data: data ? { user: data.user ? { id: data.user.id } : null } : null };
   };
 
   const signOut = async () => {

@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useTheme } from 'next-themes';
 
 const roleLabels: Record<string, string> = {
@@ -103,6 +103,9 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2 pl-2 pr-3">
                 <Avatar className="h-8 w-8">
+                  {profile?.avatar_url && (
+                    <AvatarImage src={profile.avatar_url} alt={profile.full_name} />
+                  )}
                   <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
                     {initials}
                   </AvatarFallback>
