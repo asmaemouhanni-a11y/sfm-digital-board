@@ -9,10 +9,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Shield, ShieldCheck, Users, UserCog } from 'lucide-react';
+import { 
+  Shield, 
+  ShieldCheck, 
+  Users, 
+  UserCog, 
+  LayoutGrid,
+  Plus,
+  Pencil,
+  Trash2,
+  Settings,
+  CheckCircle,
+  DollarSign,
+  Truck,
+  TrendingUp,
+  AlertTriangle
+} from 'lucide-react';
 import { Navigate } from 'react-router-dom';
-import { AppRole } from '@/types/sfm';
+import { AppRole, SfmCategory } from '@/types/sfm';
+import { CategoryDialog } from '@/components/admin/CategoryDialog';
+import { DeleteConfirmDialog } from '@/components/admin/DeleteConfirmDialog';
 
 interface UserWithRole {
   id: string;
@@ -28,7 +47,7 @@ const ROLE_CONFIG: Record<AppRole, { label: string; color: string; icon: React.E
     label: 'Administrateur', 
     color: 'bg-destructive/20 text-destructive border-destructive/30',
     icon: ShieldCheck,
-    description: 'Gestion des utilisateurs, Administration de l\'application'
+    description: 'Gestion des utilisateurs, Configuration des catégories SFM'
   },
   manager: { 
     label: 'Manager', 
@@ -50,9 +69,25 @@ const ROLE_CONFIG: Record<AppRole, { label: string; color: string; icon: React.E
   },
 };
 
+const iconMap: Record<string, React.ElementType> = {
+  'shield': Shield,
+  'check-circle': CheckCircle,
+  'dollar-sign': DollarSign,
+  'truck': Truck,
+  'trending-up': TrendingUp,
+  'users': Users,
+  'settings': Settings,
+  'alert-triangle': AlertTriangle,
+};
+
 export default function UsersPage() {
   const { role: currentUserRole, user: currentUser } = useAuth();
   const queryClient = useQueryClient();
+
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<SfmCategory | null>(null);
+  const [deleteItem, setDeleteItem] = useState<{ type: 'category' | 'kpi'; id: string; name: string } | null>(null);
 
   // Redirect non-admin users
   if (currentUserRole !== 'admin') {
@@ -83,6 +118,18 @@ export default function UsersPage() {
     },
   });
 
+  const { data: categories, isLoading: categoriesLoading } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('sfm_categories')
+        .select('*')
+        .order('display_order');
+      if (error) throw error;
+      return data as SfmCategory[];
+    },
+  });
+
   const updateRoleMutation = useMutation({
     mutationFn: async ({ userId, newRole }: { userId: string; newRole: AppRole }) => {
       const { error } = await supabase
@@ -103,7 +150,6 @@ export default function UsersPage() {
   });
 
   const handleRoleChange = (userId: string, newRole: AppRole) => {
-    // Prevent admin from changing their own role
     if (userId === currentUser?.id) {
       toast.error('Vous ne pouvez pas modifier votre propre rôle');
       return;
@@ -115,119 +161,254 @@ export default function UsersPage() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  return (
-    <AppLayout title="Gestion des utilisateurs" subtitle="Administration des rôles et permissions">
-      {/* Role Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {Object.entries(ROLE_CONFIG).map(([role, config]) => {
-          const count = users?.filter(u => u.role === role).length || 0;
-          const Icon = config.icon;
-          return (
-            <Card key={role} className="bg-gradient-to-br from-card to-card/80 border-border/50">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className={`p-2 rounded-lg ${config.color}`}>
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{config.label}</p>
-                    <p className="text-2xl font-bold">{count}</p>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground line-clamp-2">{config.description}</p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+  const handleEditCategory = (category: SfmCategory) => {
+    setSelectedCategory(category);
+    setCategoryDialogOpen(true);
+  };
 
-      {/* Users Table */}
-      <Card className="bg-card/50 border-border/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Liste des utilisateurs
-          </CardTitle>
-          <CardDescription>
-            Gérez les rôles et permissions des utilisateurs de l'application
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-4">
-              {[1, 2, 3, 4].map(i => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Utilisateur</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Rôle actuel</TableHead>
-                  <TableHead>Modifier le rôle</TableHead>
-                  <TableHead>Date d'inscription</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users?.map((user) => {
-                  const roleConfig = ROLE_CONFIG[user.role];
-                  const isCurrentUser = user.user_id === currentUser?.id;
-                  
-                  return (
-                    <TableRow key={user.id} className={isCurrentUser ? 'bg-primary/5' : ''}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9">
-                            <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                              {getInitials(user.full_name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{user.full_name}</p>
-                            {isCurrentUser && (
-                              <span className="text-xs text-primary">(vous)</span>
-                            )}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {user.email}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={roleConfig.color}>
-                          {roleConfig.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={user.role}
-                          onValueChange={(value) => handleRoleChange(user.user_id, value as AppRole)}
-                          disabled={isCurrentUser || updateRoleMutation.isPending}
-                        >
-                          <SelectTrigger className="w-40">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">Administrateur</SelectItem>
-                            <SelectItem value="manager">Manager</SelectItem>
-                            <SelectItem value="team_leader">Chef d'équipe</SelectItem>
-                            <SelectItem value="operator">Opérateur</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {new Date(user.created_at).toLocaleDateString('fr-FR')}
-                      </TableCell>
+  const handleNewCategory = () => {
+    setSelectedCategory(null);
+    setCategoryDialogOpen(true);
+  };
+
+  const handleDeleteCategory = (id: string, name: string) => {
+    setDeleteItem({ type: 'category', id, name });
+    setDeleteDialogOpen(true);
+  };
+
+  return (
+    <AppLayout title="Administration" subtitle="Gestion des utilisateurs et configuration">
+      <Tabs defaultValue="users" className="space-y-6">
+        <TabsList className="bg-muted/50">
+          <TabsTrigger value="users" className="gap-2">
+            <Users className="h-4 w-4" />
+            Utilisateurs
+          </TabsTrigger>
+          <TabsTrigger value="categories" className="gap-2">
+            <LayoutGrid className="h-4 w-4" />
+            Catégories SFM
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Users Tab */}
+        <TabsContent value="users">
+          {/* Role Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {Object.entries(ROLE_CONFIG).map(([role, config]) => {
+              const count = users?.filter(u => u.role === role).length || 0;
+              const Icon = config.icon;
+              return (
+                <Card key={role} className="bg-gradient-to-br from-card to-card/80 border-border/50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className={`p-2 rounded-lg ${config.color}`}>
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{config.label}</p>
+                        <p className="text-2xl font-bold">{count}</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{config.description}</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Users Table */}
+          <Card className="bg-card/50 border-border/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Liste des utilisateurs
+              </CardTitle>
+              <CardDescription>
+                Gérez les rôles et permissions des utilisateurs de l'application
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3, 4].map(i => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Utilisateur</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Rôle actuel</TableHead>
+                      <TableHead>Modifier le rôle</TableHead>
+                      <TableHead>Date d'inscription</TableHead>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {users?.map((user) => {
+                      const roleConfig = ROLE_CONFIG[user.role];
+                      const isCurrentUser = user.user_id === currentUser?.id;
+                      
+                      return (
+                        <TableRow key={user.id} className={isCurrentUser ? 'bg-primary/5' : ''}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-9 w-9">
+                                <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                                  {getInitials(user.full_name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{user.full_name}</p>
+                                {isCurrentUser && (
+                                  <span className="text-xs text-primary">(vous)</span>
+                                )}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {user.email}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={roleConfig.color}>
+                              {roleConfig.label}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              value={user.role}
+                              onValueChange={(value) => handleRoleChange(user.user_id, value as AppRole)}
+                              disabled={isCurrentUser || updateRoleMutation.isPending}
+                            >
+                              <SelectTrigger className="w-40">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="admin">Administrateur</SelectItem>
+                                <SelectItem value="manager">Manager</SelectItem>
+                                <SelectItem value="team_leader">Chef d'équipe</SelectItem>
+                                <SelectItem value="operator">Opérateur</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-sm">
+                            {new Date(user.created_at).toLocaleDateString('fr-FR')}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Categories Tab */}
+        <TabsContent value="categories">
+          <Card className="bg-card/50 border-border/50">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <LayoutGrid className="h-5 w-5" />
+                  Catégories SFM
+                </CardTitle>
+                <CardDescription>
+                  Gérez les catégories du Shop Floor Management
+                </CardDescription>
+              </div>
+              <Button onClick={handleNewCategory}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nouvelle catégorie
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {categoriesLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Ordre</TableHead>
+                      <TableHead>Code</TableHead>
+                      <TableHead>Nom</TableHead>
+                      <TableHead>Icône</TableHead>
+                      <TableHead>Couleur</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {categories?.map((category) => {
+                      const Icon = iconMap[category.icon || 'settings'] || Settings;
+                      return (
+                        <TableRow key={category.id}>
+                          <TableCell className="font-mono">{category.display_order}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" style={{ borderColor: category.color, color: category.color }}>
+                              {category.code}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-medium">{category.name}</TableCell>
+                          <TableCell>
+                            <Icon className="h-5 w-5" style={{ color: category.color }} />
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-full" style={{ backgroundColor: category.color }} />
+                              <span className="text-sm text-muted-foreground">{category.color}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={category.is_active ? 'default' : 'secondary'}>
+                              {category.is_active ? 'Actif' : 'Inactif'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button size="sm" variant="ghost" onClick={() => handleEditCategory(category)}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => handleDeleteCategory(category.id, category.name)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Dialogs */}
+      <CategoryDialog
+        open={categoryDialogOpen}
+        onOpenChange={setCategoryDialogOpen}
+        category={selectedCategory}
+      />
+
+      {deleteItem && (
+        <DeleteConfirmDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          itemType={deleteItem.type}
+          itemId={deleteItem.id}
+          itemName={deleteItem.name}
+        />
+      )}
     </AppLayout>
   );
 }

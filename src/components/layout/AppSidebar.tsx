@@ -40,8 +40,8 @@ const operationalItems: NavItem[] = [
 // Pages d'administration - accessibles selon le rôle
 const adminItems: NavItem[] = [
   { title: 'Utilisateurs', href: '/users', icon: Users, requiredRole: ['admin'] },
-  { title: 'Catégories & KPIs', href: '/admin', icon: Settings, requiredRole: ['admin'] },
-  { title: 'Paramètres', href: '/settings', icon: Settings, requiredRole: ['admin', 'manager'] },
+  { title: 'Catégories & KPIs', href: '/admin', icon: Settings, requiredRole: ['manager'] },
+  { title: 'Paramètres', href: '/settings', icon: Settings, requiredRole: ['manager'] },
 ];
 
 export function AppSidebar() {
