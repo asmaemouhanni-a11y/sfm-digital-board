@@ -44,7 +44,6 @@ const teamLeaderItems: NavItem[] = [
 // Pages d'administration - uniquement pour admin
 const adminItems: NavItem[] = [
   { title: 'Utilisateurs', href: '/users', icon: Users, requiredRole: ['admin'] },
-  { title: 'Paramètres', href: '/settings', icon: Settings, requiredRole: ['admin'] },
 ];
 
 // Pages pour manager
