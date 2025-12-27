@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Loader2, TrendingUp, TrendingDown } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Kpi } from '@/types/sfm';
 import { Separator } from '@/components/ui/separator';
 
@@ -44,10 +44,6 @@ const UNITS = [
   { value: 'minutes', label: 'Minutes' },
 ];
 
-const PERFORMANCE_DIRECTIONS = [
-  { value: 'higher_is_better', label: 'Plus la valeur est élevée, mieux c\'est', icon: TrendingUp },
-  { value: 'lower_is_better', label: 'Plus la valeur est faible, mieux c\'est', icon: TrendingDown },
-];
 
 export function KpiDialog({ open, onOpenChange, kpi, defaultCategoryId }: KpiDialogProps) {
   const queryClient = useQueryClient();
@@ -268,27 +264,6 @@ export function KpiDialog({ open, onOpenChange, kpi, defaultCategoryId }: KpiDia
                 </Select>
               </div>
 
-              <div className="space-y-2 col-span-2">
-                <Label>Sens de performance</Label>
-                <Select 
-                  value={formData.performance_direction} 
-                  onValueChange={(value: 'higher_is_better' | 'lower_is_better') => setFormData(prev => ({ ...prev, performance_direction: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PERFORMANCE_DIRECTIONS.map((dir) => (
-                      <SelectItem key={dir.value} value={dir.value}>
-                        <div className="flex items-center gap-2">
-                          <dir.icon className="h-4 w-4" />
-                          {dir.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
           </div>
 
