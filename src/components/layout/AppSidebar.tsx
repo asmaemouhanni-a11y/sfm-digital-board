@@ -26,18 +26,18 @@ interface NavItem {
   requiredRole?: string[];
 }
 
-// Pages pour opérateurs - accès limité
+// Pages pour opérateurs - accès limité (lecture seule pour certaines)
 const operatorItems: NavItem[] = [
   { title: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard, requiredRole: ['manager', 'team_leader', 'operator'] },
   { title: 'Priorités du jour', href: '/priorities', icon: Target, requiredRole: ['manager', 'team_leader', 'operator'] },
   { title: 'Problèmes', href: '/problems', icon: AlertTriangle, requiredRole: ['manager', 'team_leader', 'operator'] },
+  { title: 'Alertes', href: '/alerts', icon: Bell, requiredRole: ['manager', 'team_leader', 'operator'] },
+  { title: 'Actions', href: '/actions', icon: CheckSquare, requiredRole: ['manager', 'team_leader', 'operator'] },
+  { title: 'Notes', href: '/notes', icon: FileText, requiredRole: ['manager', 'team_leader', 'operator'] },
 ];
 
-// Pages supplémentaires pour chef d'équipe et manager
+// Pages supplémentaires pour chef d'équipe et manager (Rapports uniquement)
 const teamLeaderItems: NavItem[] = [
-  { title: 'Alertes', href: '/alerts', icon: Bell, requiredRole: ['manager', 'team_leader'] },
-  { title: 'Actions', href: '/actions', icon: CheckSquare, requiredRole: ['manager', 'team_leader'] },
-  { title: 'Notes', href: '/notes', icon: FileText, requiredRole: ['manager', 'team_leader'] },
   { title: 'Rapports', href: '/reports', icon: FileBarChart, requiredRole: ['manager'] },
 ];
 
