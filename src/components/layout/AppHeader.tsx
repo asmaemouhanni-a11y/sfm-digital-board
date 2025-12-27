@@ -130,12 +130,10 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
                 <User className="mr-2 h-4 w-4" />
                 Profil
               </DropdownMenuItem>
-              {hasPermission(['admin', 'manager']) && (
-                <DropdownMenuItem onClick={() => navigate('/settings')}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Paramètres
-                </DropdownMenuItem>
-              )}
+              <DropdownMenuItem onClick={() => navigate('/settings')}>
+                <Settings className="mr-2 h-4 w-4" />
+                Paramètres
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                 <LogOut className="mr-2 h-4 w-4" />

@@ -51,10 +51,7 @@ export default function SettingsPage() {
     updateSettings: updatePushSettings 
   } = usePushNotifications();
 
-  // Redirect non-authorized users
-  if (!hasPermission(['admin', 'manager'])) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  // All authenticated users can access settings
 
   // Fetch user notification settings
   const { data: userSettings, isLoading: userSettingsLoading } = useQuery({
