@@ -101,11 +101,6 @@ export default function UsersPage() {
   const [deleteUserDialogOpen, setDeleteUserDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserWithRole | null>(null);
 
-  // Redirect non-admin users
-  if (currentUserRole !== 'admin') {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   const { data: users, isLoading } = useQuery({
     queryKey: ['users-with-roles'],
     queryFn: async () => {
@@ -173,6 +168,11 @@ export default function UsersPage() {
       toast.error('Erreur lors de la mise à jour du rôle');
     },
   });
+
+  // Redirect non-admin users AFTER all hooks
+  if (currentUserRole !== 'admin') {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const handleRoleChange = (userId: string, newRole: AppRole) => {
     if (userId === currentUser?.id) {
