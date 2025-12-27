@@ -34,6 +34,7 @@ const operatorItems: NavItem[] = [
   { title: 'Alertes', href: '/alerts', icon: Bell, requiredRole: ['manager', 'team_leader', 'operator'] },
   { title: 'Actions', href: '/actions', icon: CheckSquare, requiredRole: ['manager', 'team_leader', 'operator'] },
   { title: 'Notes', href: '/notes', icon: FileText, requiredRole: ['manager', 'team_leader', 'operator'] },
+  { title: 'Paramètres', href: '/settings', icon: Settings, requiredRole: ['manager', 'team_leader', 'operator'] },
 ];
 
 // Pages supplémentaires pour chef d'équipe et manager (Rapports uniquement)
@@ -45,11 +46,6 @@ const teamLeaderItems: NavItem[] = [
 const adminItems: NavItem[] = [
   { title: 'Utilisateurs', href: '/users', icon: Users, requiredRole: ['admin'] },
   { title: 'Paramètres', href: '/settings', icon: Settings, requiredRole: ['admin'] },
-];
-
-// Pages pour manager
-const managerItems: NavItem[] = [
-  { title: 'Paramètres', href: '/settings', icon: Settings, requiredRole: ['manager'] },
 ];
 
 export function AppSidebar() {
@@ -163,21 +159,6 @@ export function AppSidebar() {
                 </div>
               )}
 
-              {/* Pages manager */}
-              {isManager && (
-                <>
-                  <div className="pt-4 pb-2">
-                    {!collapsed && (
-                      <span className="px-3 text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider">
-                        Administration
-                      </span>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    {managerItems.map(renderNavItem)}
-                  </div>
-                </>
-              )}
             </>
           )}
         </nav>
