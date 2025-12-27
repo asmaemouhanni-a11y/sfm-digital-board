@@ -1,4 +1,4 @@
 project_id = "homsndwdbckwuylgzatb"
 
 [functions.generate-alerts]
-verify_jwt = true
+verify_jwt = false
