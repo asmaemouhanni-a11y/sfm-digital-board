@@ -1,4 +1,4 @@
-import { Bell, LogOut, User, ChevronDown, Settings, Sun, Moon } from 'lucide-react';
+import { Bell, LogOut, User, ChevronDown, Settings, Sun, Moon, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useSmartAlerts } from '@/hooks/useSfmData';
@@ -14,6 +14,17 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useTheme } from 'next-themes';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 const roleLabels: Record<string, string> = {
   admin: 'Administrateur',
@@ -40,12 +51,52 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
   const { data: alerts } = useSmartAlerts();
   const { theme, setTheme } = useTheme();
 
-  const unreadAlerts = alerts?.length || 0;
+  const queryClient = useQueryClient();
+
+  const unreadAlerts = alerts?.filter(a => !a.is_read)?.length || 0;
   const initials = profile?.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
+  };
+
+  const handleMarkAsRead = async (alertId: string) => {
+    const { error } = await supabase
+      .from('smart_alerts')
+      .update({ is_read: true })
+      .eq('id', alertId);
+    
+    if (error) {
+      toast.error('Erreur lors de la mise à jour');
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['smart-alerts'] });
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    const unreadIds = alerts?.filter(a => !a.is_read).map(a => a.id) || [];
+    if (unreadIds.length === 0) return;
+
+    const { error } = await supabase
+      .from('smart_alerts')
+      .update({ is_read: true })
+      .in('id', unreadIds);
+    
+    if (error) {
+      toast.error('Erreur lors de la mise à jour');
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['smart-alerts'] });
+      toast.success('Toutes les notifications sont lues');
+    }
+  };
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'high': return 'bg-destructive/10 text-destructive border-destructive/20';
+      case 'medium': return 'bg-[hsl(var(--status-orange))]/10 text-[hsl(var(--status-orange))] border-[hsl(var(--status-orange))]/20';
+      default: return 'bg-primary/10 text-primary border-primary/20';
+    }
   };
 
   return (
@@ -80,23 +131,90 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
             <span className="sr-only">Changer de thème</span>
           </Button>
 
-          {/* Alerts */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="relative"
-            onClick={() => navigate('/alerts')}
-          >
-            <Bell className="h-5 w-5" />
-            {unreadAlerts > 0 && (
-              <Badge 
-                variant="destructive" 
-                className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+          {/* Notifications Popover */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative"
               >
-                {unreadAlerts}
-              </Badge>
-            )}
-          </Button>
+                <Bell className="h-5 w-5" />
+                {unreadAlerts > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                  >
+                    {unreadAlerts > 9 ? '9+' : unreadAlerts}
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 p-0">
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h4 className="font-semibold text-sm">Notifications</h4>
+                {unreadAlerts > 0 && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 text-xs"
+                    onClick={handleMarkAllAsRead}
+                  >
+                    <Check className="h-3 w-3 mr-1" />
+                    Tout marquer lu
+                  </Button>
+                )}
+              </div>
+              <ScrollArea className="h-[300px]">
+                {alerts && alerts.length > 0 ? (
+                  <div className="divide-y divide-border">
+                    {alerts.slice(0, 10).map((alert) => (
+                      <div 
+                        key={alert.id} 
+                        className={`p-3 hover:bg-muted/50 cursor-pointer transition-colors ${!alert.is_read ? 'bg-primary/5' : ''}`}
+                        onClick={() => !alert.is_read && handleMarkAsRead(alert.id)}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${
+                            alert.severity === 'high' ? 'bg-destructive' : 
+                            alert.severity === 'medium' ? 'bg-[hsl(var(--status-orange))]' : 'bg-primary'
+                          }`} />
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm ${!alert.is_read ? 'font-medium' : 'text-muted-foreground'}`}>
+                              {alert.title || alert.type}
+                            </p>
+                            <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                              {alert.message}
+                            </p>
+                            <p className="text-xs text-muted-foreground/60 mt-1">
+                              {formatDistanceToNow(new Date(alert.created_at), { addSuffix: true, locale: fr })}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full py-8 text-muted-foreground">
+                    <Bell className="h-8 w-8 mb-2 opacity-50" />
+                    <p className="text-sm">Aucune notification</p>
+                  </div>
+                )}
+              </ScrollArea>
+              {hasPermission(['manager', 'team_leader']) && alerts && alerts.length > 0 && (
+                <div className="p-2 border-t border-border">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full text-xs"
+                    onClick={() => navigate('/alerts')}
+                  >
+                    Voir toutes les alertes
+                  </Button>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
 
           {/* User Menu */}
           <DropdownMenu>
