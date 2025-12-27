@@ -53,48 +53,38 @@ export function UserDialog({ open, onOpenChange, user, mode }: UserDialogProps) 
 
   const createUserMutation = useMutation({
     mutationFn: async ({ email, password, fullName, role }: { email: string; password: string; fullName: string; role: AppRole }) => {
-      // Create user using Supabase auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: { full_name: fullName, role },
-        },
-      });
-
-      if (authError) throw authError;
-
-      // Wait for the trigger to complete, then update profile status to approved
-      if (authData.user) {
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        await supabase
-          .from('profiles')
-          .update({ status: 'approved', full_name: fullName })
-          .eq('user_id', authData.user.id);
-
-        if (role !== 'operator') {
-          await supabase
-            .from('user_roles')
-            .update({ role })
-            .eq('user_id', authData.user.id);
-        }
+      // Get current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Non authentifié');
       }
 
-      return authData;
+      // Call edge function to create user without affecting current session
+      const response = await supabase.functions.invoke('create-user', {
+        body: { email, password, fullName, role },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Erreur lors de la création');
+      }
+
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
       toast.success('Utilisateur créé avec succès');
       onOpenChange(false);
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       console.error('Error creating user:', error);
-      if (error.message?.includes('already registered')) {
+      if (error.message?.includes('already registered') || error.message?.includes('already been registered')) {
         toast.error('Cet email est déjà enregistré');
       } else {
-        toast.error('Erreur lors de la création de l\'utilisateur');
+        toast.error(error.message || 'Erreur lors de la création de l\'utilisateur');
       }
     },
   });
