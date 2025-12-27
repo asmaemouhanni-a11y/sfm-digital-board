@@ -1,7 +1,7 @@
-import { Bell, LogOut, User, ChevronDown, Settings, Sun, Moon } from 'lucide-react';
+import { Bell, LogOut, User, ChevronDown, Settings, Sun, Moon, CheckCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useSmartAlerts } from '@/hooks/useSfmData';
+import { useNotifications } from '@/hooks/useNotifications';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -14,6 +14,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useTheme } from 'next-themes';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const roleLabels: Record<string, string> = {
   admin: 'Administrateur',
@@ -37,16 +38,18 @@ interface AppHeaderProps {
 export function AppHeader({ title, subtitle }: AppHeaderProps) {
   const navigate = useNavigate();
   const { profile, role, signOut, hasPermission } = useAuth();
-  const { data: alerts } = useSmartAlerts();
+  const { alerts, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const { theme, setTheme } = useTheme();
 
-  const unreadAlerts = alerts?.length || 0;
   const initials = profile?.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
   };
+
+  // Admin ne voit pas les alertes opérationnelles
+  const showAlerts = role !== 'admin';
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/50 bg-background/80 backdrop-blur-xl">
@@ -80,23 +83,93 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
             <span className="sr-only">Changer de thème</span>
           </Button>
 
-          {/* Alerts */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="relative"
-            onClick={() => navigate('/alerts')}
-          >
-            <Bell className="h-5 w-5" />
-            {unreadAlerts > 0 && (
-              <Badge 
-                variant="destructive" 
-                className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-              >
-                {unreadAlerts}
-              </Badge>
-            )}
-          </Button>
+          {/* Alerts - Hidden for admin */}
+          {showAlerts && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="relative"
+                >
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                    >
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80">
+                <DropdownMenuLabel className="flex items-center justify-between">
+                  <span>Notifications</span>
+                  {unreadCount > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-xs"
+                      onClick={() => markAllAsRead()}
+                    >
+                      <CheckCheck className="h-3 w-3 mr-1" />
+                      Tout lire
+                    </Button>
+                  )}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <ScrollArea className="h-64">
+                  {alerts && alerts.length > 0 ? (
+                    alerts.slice(0, 10).map((alert) => (
+                      <DropdownMenuItem
+                        key={alert.id}
+                        className="flex flex-col items-start p-3 cursor-pointer"
+                        onClick={() => {
+                          markAsRead(alert.id);
+                          navigate('/alerts');
+                        }}
+                      >
+                        <div className="flex items-center gap-2 w-full">
+                          <div className={`w-2 h-2 rounded-full ${
+                            alert.severity === 'critical' || alert.severity === 'high' 
+                              ? 'bg-destructive' 
+                              : alert.severity === 'warning' || alert.severity === 'medium'
+                              ? 'bg-[hsl(var(--status-orange))]'
+                              : 'bg-primary'
+                          }`} />
+                          <span className="font-medium text-sm truncate flex-1">
+                            {alert.title || 'Alerte'}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {new Date(alert.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2 mt-1 pl-4">
+                          {alert.message}
+                        </p>
+                      </DropdownMenuItem>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      Aucune notification
+                    </div>
+                  )}
+                </ScrollArea>
+                {alerts && alerts.length > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      className="justify-center text-primary"
+                      onClick={() => navigate('/alerts')}
+                    >
+                      Voir toutes les alertes
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           {/* User Menu */}
           <DropdownMenu>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useCategories } from '@/hooks/useSfmData';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
@@ -26,6 +27,11 @@ export default function DashboardPage() {
   const { role } = useAuth();
   const { data: categories, isLoading: categoriesLoading } = useCategories();
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
+
+  // Admin ne doit pas accéder au dashboard - rediriger vers la gestion utilisateurs
+  if (role === 'admin') {
+    return <Navigate to="/users" replace />;
+  }
   
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>();
@@ -39,8 +45,8 @@ export default function DashboardPage() {
   const [kpiDialogOpen, setKpiDialogOpen] = useState(false);
   const [selectedKpi, setSelectedKpi] = useState<Kpi | null>(null);
 
-  // Permissions - Admin and manager can manage categories and KPIs
-  const canManageCategories = role === 'admin' || role === 'manager';
+  // Permissions - Only manager can manage categories and KPIs (admin manages only users)
+  const canManageCategories = role === 'manager';
 
   const handleAddCategory = () => {
     setSelectedCategory(null);
