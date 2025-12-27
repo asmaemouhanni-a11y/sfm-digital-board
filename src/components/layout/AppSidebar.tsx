@@ -49,7 +49,6 @@ const adminItems: NavItem[] = [
 
 // Pages pour manager
 const managerItems: NavItem[] = [
-  { title: 'Catégories & KPIs', href: '/admin', icon: Settings, requiredRole: ['manager'] },
   { title: 'Paramètres', href: '/settings', icon: Settings, requiredRole: ['manager'] },
 ];
 
