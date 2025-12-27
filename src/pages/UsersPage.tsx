@@ -235,10 +235,6 @@ export default function UsersPage() {
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="categories" className="gap-2">
-            <LayoutGrid className="h-4 w-4" />
-            Catégories SFM
-          </TabsTrigger>
         </TabsList>
 
         {/* Users Tab */}
@@ -387,93 +383,6 @@ export default function UsersPage() {
         {/* Pending Users Tab */}
         <TabsContent value="pending">
           <PendingUsersTab />
-        </TabsContent>
-
-        {/* Categories Tab */}
-        <TabsContent value="categories">
-          <Card className="bg-card/50 border-border/50">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <LayoutGrid className="h-5 w-5" />
-                  Catégories SFM
-                </CardTitle>
-                <CardDescription>
-                  Gérez les catégories du Shop Floor Management
-                </CardDescription>
-              </div>
-              <Button onClick={handleNewCategory}>
-                <Plus className="h-4 w-4 mr-2" />
-                Nouvelle catégorie
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {categoriesLoading ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Ordre</TableHead>
-                      <TableHead>Code</TableHead>
-                      <TableHead>Nom</TableHead>
-                      <TableHead>Icône</TableHead>
-                      <TableHead>Couleur</TableHead>
-                      <TableHead>Statut</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {categories?.map((category) => {
-                      const Icon = iconMap[category.icon || 'settings'] || Settings;
-                      return (
-                        <TableRow key={category.id}>
-                          <TableCell className="font-mono">{category.display_order}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" style={{ borderColor: category.color, color: category.color }}>
-                              {category.code}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="font-medium">{category.name}</TableCell>
-                          <TableCell>
-                            <Icon className="h-5 w-5" style={{ color: category.color }} />
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 rounded-full" style={{ backgroundColor: category.color }} />
-                              <span className="text-sm text-muted-foreground">{category.color}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={category.is_active ? 'default' : 'secondary'}>
-                              {category.is_active ? 'Actif' : 'Inactif'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button size="sm" variant="ghost" onClick={() => handleEditCategory(category)}>
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                className="text-destructive hover:text-destructive"
-                                onClick={() => handleDeleteCategory(category.id, category.name)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
 
