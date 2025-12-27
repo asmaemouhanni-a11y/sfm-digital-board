@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useAllAlerts, useMarkAlertRead, useGenerateAlerts, useDeleteAlert } from '@/hooks/useSfmData';
 import { useAuth } from '@/hooks/useAuth';
@@ -91,10 +92,15 @@ const sortAlerts = (alerts: any[]) => {
 
 export default function AlertsPage() {
   const { data: alerts, isLoading } = useAllAlerts();
-  const { hasPermission } = useAuth();
+  const { hasPermission, role } = useAuth();
   const markRead = useMarkAlertRead();
   const generateAlerts = useGenerateAlerts();
   const deleteAlert = useDeleteAlert();
+
+  // Admin ne doit pas accéder aux alertes
+  if (role === 'admin') {
+    return <Navigate to="/users" replace />;
+  }
 
   const [activeTab, setActiveTab] = useState('unread');
 

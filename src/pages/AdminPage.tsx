@@ -42,7 +42,7 @@ const iconMap: Record<string, React.ElementType> = {
 };
 
 export default function AdminPage() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, role } = useAuth();
   
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [kpiDialogOpen, setKpiDialogOpen] = useState(false);
@@ -52,8 +52,12 @@ export default function AdminPage() {
   const [selectedKpi, setSelectedKpi] = useState<Kpi | null>(null);
   const [deleteItem, setDeleteItem] = useState<{ type: 'category' | 'kpi'; id: string; name: string } | null>(null);
 
-  // Redirect non-admin users
-  if (!hasPermission('admin')) {
+  // Only managers can access this page (admin only manages users)
+  if (role === 'admin') {
+    return <Navigate to="/users" replace />;
+  }
+  
+  if (!hasPermission('manager')) {
     return <Navigate to="/dashboard" replace />;
   }
 

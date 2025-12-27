@@ -28,34 +28,34 @@ export function DeleteUserDialog({ open, onOpenChange, user }: DeleteUserDialogP
 
   const deleteMutation = useMutation({
     mutationFn: async (userId: string) => {
-      // Delete user role first
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId);
+      // Call the edge function to delete the user completely
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
 
-      if (roleError) throw roleError;
+      if (!token) {
+        throw new Error('Non authentifié');
+      }
 
-      // Delete profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('user_id', userId);
+      const response = await supabase.functions.invoke('delete-user', {
+        body: { userId },
+      });
 
-      if (profileError) throw profileError;
+      if (response.error) {
+        throw new Error(response.error.message || 'Erreur lors de la suppression');
+      }
 
-      // Note: We can't delete from auth.users directly from client side
-      // The user will remain in auth but without profile/role
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users-with-roles'] });
       queryClient.invalidateQueries({ queryKey: ['pending-users'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-users-count'] });
       toast.success('Utilisateur supprimé avec succès');
       onOpenChange(false);
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Error deleting user:', error);
-      toast.error('Erreur lors de la suppression de l\'utilisateur');
+      toast.error(error.message || 'Erreur lors de la suppression de l\'utilisateur');
     },
   });
 
