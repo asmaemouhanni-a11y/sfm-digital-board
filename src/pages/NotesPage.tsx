@@ -145,10 +145,12 @@ export default function NotesPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold">Liste des notes</h2>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Nouvelle note
-        </Button>
+        {hasPermission(['admin', 'manager', 'team_leader']) && (
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nouvelle note
+          </Button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -246,46 +248,48 @@ export default function NotesPage() {
                               )}
                             </div>
                             
-                            <TooltipProvider>
-                              <div className="flex items-center gap-1">
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => handleTogglePin(note.id, note.is_pinned)}
-                                      disabled={updateNote.isPending}
-                                    >
-                                      {note.is_pinned ? (
-                                        <PinOff className="h-4 w-4 text-[hsl(var(--status-orange))]" />
-                                      ) : (
-                                        <Pin className="h-4 w-4" />
-                                      )}
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    {note.is_pinned ? 'Désépingler' : 'Épingler'}
-                                  </TooltipContent>
-                                </Tooltip>
-                                
-                                {(note.created_by === user?.id || hasPermission(['admin', 'manager'])) && (
+                            {hasPermission(['admin', 'manager', 'team_leader']) && (
+                              <TooltipProvider>
+                                <div className="flex items-center gap-1">
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <Button
                                         size="sm"
                                         variant="ghost"
-                                        onClick={() => handleDelete(note.id, note.created_by)}
-                                        disabled={deleteNote.isPending}
-                                        className="text-destructive hover:text-destructive"
+                                        onClick={() => handleTogglePin(note.id, note.is_pinned)}
+                                        disabled={updateNote.isPending}
                                       >
-                                        <Trash2 className="h-4 w-4" />
+                                        {note.is_pinned ? (
+                                          <PinOff className="h-4 w-4 text-[hsl(var(--status-orange))]" />
+                                        ) : (
+                                          <Pin className="h-4 w-4" />
+                                        )}
                                       </Button>
                                     </TooltipTrigger>
-                                    <TooltipContent>Supprimer</TooltipContent>
+                                    <TooltipContent>
+                                      {note.is_pinned ? 'Désépingler' : 'Épingler'}
+                                    </TooltipContent>
                                   </Tooltip>
-                                )}
-                              </div>
-                            </TooltipProvider>
+                                  
+                                  {(note.created_by === user?.id || hasPermission(['admin', 'manager'])) && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => handleDelete(note.id, note.created_by)}
+                                          disabled={deleteNote.isPending}
+                                          className="text-destructive hover:text-destructive"
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>Supprimer</TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                </div>
+                              </TooltipProvider>
+                            )}
                           </div>
                         </CardContent>
                       </Card>
@@ -301,10 +305,12 @@ export default function NotesPage() {
                       ? 'Aucune note épinglée' 
                       : 'Commencez par ajouter une note'}
                   </p>
-                  <Button onClick={() => setDialogOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nouvelle note
-                  </Button>
+                  {hasPermission(['admin', 'manager', 'team_leader']) && (
+                    <Button onClick={() => setDialogOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Nouvelle note
+                    </Button>
+                  )}
                 </div>
               )}
             </TabsContent>
@@ -312,10 +318,12 @@ export default function NotesPage() {
         </CardContent>
       </Card>
 
-      <CreateNoteDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-      />
+      {hasPermission(['admin', 'manager', 'team_leader']) && (
+        <CreateNoteDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+        />
+      )}
     </AppLayout>
   );
 }

@@ -337,7 +337,7 @@ export function useNotes(categoryId?: string) {
     queryFn: async () => {
       let query = supabase
         .from('notes')
-        .select('*, category:sfm_categories(*), author:profiles!notes_created_by_fkey(*)');
+        .select('*, category:sfm_categories(*)');
       
       if (categoryId) {
         query = query.eq('category_id', categoryId);
@@ -345,7 +345,29 @@ export function useNotes(categoryId?: string) {
       
       const { data, error } = await query.order('is_pinned', { ascending: false }).order('created_at', { ascending: false }).limit(100);
       if (error) throw error;
-      return data as unknown as Note[];
+      
+      // Fetch author profiles separately to avoid FK issues
+      const authorIds = [...new Set(data?.filter(n => n.created_by).map(n => n.created_by) || [])];
+      let authorsMap: Record<string, { full_name: string }> = {};
+      
+      if (authorIds.length > 0) {
+        const { data: authors } = await supabase
+          .from('profiles')
+          .select('user_id, full_name')
+          .in('user_id', authorIds);
+        
+        if (authors) {
+          authorsMap = authors.reduce((acc, a) => {
+            acc[a.user_id] = { full_name: a.full_name };
+            return acc;
+          }, {} as Record<string, { full_name: string }>);
+        }
+      }
+      
+      return (data || []).map(note => ({
+        ...note,
+        author: note.created_by ? authorsMap[note.created_by] : null
+      })) as unknown as Note[];
     },
   });
 }
