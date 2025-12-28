@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { Gauge, Shield, TrendingUp, Users, Briefcase, HardHat, Wrench, Clock, LogOut, Camera, X } from 'lucide-react';
+import { Factory, Shield, TrendingUp, Users, Briefcase, HardHat, Wrench, Clock, LogOut, Camera, X } from 'lucide-react';
 import { z } from 'zod';
 import { AppRole } from '@/types/sfm';
 import { supabase } from '@/integrations/supabase/client';
@@ -288,7 +288,7 @@ export default function Auth() {
         <div>
           <div className="flex items-center gap-3 mb-8">
             <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
-              <Gauge className="h-8 w-8 text-primary" />
+              <Factory className="h-8 w-8 text-primary" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground">SFM DigiBoard</h1>
@@ -354,7 +354,7 @@ export default function Auth() {
           <CardHeader className="text-center">
             <div className="lg:hidden flex items-center justify-center gap-3 mb-4">
               <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-                <Gauge className="h-6 w-6 text-primary" />
+                <Factory className="h-6 w-6 text-primary" />
               </div>
               <span className="text-xl font-bold">SFM DigiBoard</span>
             </div>
