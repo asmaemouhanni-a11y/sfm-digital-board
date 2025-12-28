@@ -9,9 +9,9 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Factory,
   Users,
-  FileBarChart
+  FileBarChart,
+  Gauge
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -126,12 +126,12 @@ export function AppSidebar() {
           collapsed ? 'justify-center px-2' : 'px-4'
         )}>
           <div className="p-2 rounded-lg bg-primary/20 border border-primary/30 flex-shrink-0">
-            <Factory className="h-5 w-5 text-primary" />
+            <Gauge className="h-5 w-5 text-primary" />
           </div>
           {!collapsed && (
             <div className="flex flex-col overflow-hidden">
-              <span className="text-sm font-bold text-sidebar-foreground truncate">SFM Digital</span>
-              <span className="text-xs text-sidebar-foreground/50 truncate">Gestion Lean</span>
+              <span className="text-sm font-bold text-sidebar-foreground truncate">SFM DigiBoard</span>
+              <span className="text-xs text-sidebar-foreground/50 truncate">Shop Floor Management</span>
             </div>
           )}
         </div>

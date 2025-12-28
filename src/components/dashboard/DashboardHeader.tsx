@@ -1,4 +1,4 @@
-import { Bell, LogOut, Settings, User, Factory, ChevronDown } from 'lucide-react';
+import { Bell, LogOut, Settings, User, LayoutDashboard, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSmartAlerts } from '@/hooks/useSfmData';
 import { Button } from '@/components/ui/button';
@@ -34,11 +34,11 @@ export function DashboardHeader() {
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-              <Factory className="h-6 w-6 text-primary" />
+              <LayoutDashboard className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-foreground">SFM Digital</h1>
-              <p className="text-xs text-muted-foreground">Tableau de bord</p>
+              <h1 className="text-lg font-bold text-foreground">SFM DigiBoard</h1>
+              <p className="text-xs text-muted-foreground">Shop Floor Management</p>
             </div>
           </div>
         </div>
