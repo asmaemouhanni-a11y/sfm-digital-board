@@ -81,16 +81,16 @@ export function SfmColumn({ category, onAddAction, onAddKpi, onEditCategory, onD
         className="p-4 border-b border-border/30"
         style={{ borderBottomColor: `${category.color}30` }}
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start gap-3 min-w-0 flex-1">
             <div 
-              className="p-2 rounded-lg"
+              className="p-2 rounded-lg flex-shrink-0"
               style={{ backgroundColor: `${category.color}20` }}
             >
               <Icon className="h-5 w-5" style={{ color: category.color }} />
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-foreground">{category.name}</h2>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base font-bold text-foreground leading-tight break-words">{category.name}</h2>
               <span 
                 className="text-xs font-mono font-semibold"
                 style={{ color: category.color }}
