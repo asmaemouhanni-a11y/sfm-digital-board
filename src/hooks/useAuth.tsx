@@ -62,7 +62,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    return () => subscription.unsubscribe();
+    // Auto-logout when closing tab/browser
+    const handleBeforeUnload = () => {
+      // Use sendBeacon for reliable logout on page unload
+      const logoutUrl = `${import.meta.env.VITE_SUPABASE_URL}/auth/v1/logout`;
+      const accessToken = session?.access_token;
+      
+      if (accessToken) {
+        navigator.sendBeacon(logoutUrl, JSON.stringify({}));
+        // Also clear local storage
+        localStorage.removeItem('supabase.auth.token');
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, []);
 
   const fetchUserData = async (userId: string) => {
