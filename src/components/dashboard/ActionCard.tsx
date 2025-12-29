@@ -70,36 +70,19 @@ export function ActionCard({ action, compact = false, onEdit }: ActionCardProps)
     return (
       <div 
         className={cn(
-          "industrial-card p-5 transition-all duration-200 group",
+          "industrial-card p-3 transition-all duration-200 group w-full overflow-hidden",
           isOverdue && "border-destructive/50",
           isDueToday && !isOverdue && "border-status-orange/50"
         )}
       >
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <StatusIcon className={cn("h-4 w-4 flex-shrink-0", status.color)} />
-              <span className="text-base font-semibold">{action.title}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar className="h-4 w-4" />
-              <span className={cn(
-                isOverdue && "text-destructive",
-                isDueToday && !isOverdue && "text-status-orange"
-              )}>
-                {format(dueDate, 'dd MMM', { locale: fr })}
-              </span>
-              {action.responsible && (
-                <>
-                  <span>•</span>
-                  <User className="h-4 w-4" />
-                  <span className="truncate">{action.responsible.full_name}</span>
-                </>
-              )}
-            </div>
+        {/* Header with title and actions */}
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="flex items-start gap-2 min-w-0 flex-1">
+            <StatusIcon className={cn("h-4 w-4 flex-shrink-0 mt-0.5", status.color)} />
+            <span className="text-sm font-semibold leading-tight break-words">{action.title}</span>
           </div>
-          <div className="flex items-center gap-1">
-            <Badge variant="outline" className={cn("text-xs px-3 py-1 flex-shrink-0", priority.className)}>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <Badge variant="outline" className={cn("text-xs px-2 py-0.5", priority.className)}>
               {priority.label}
             </Badge>
             {canManage && (
@@ -108,9 +91,9 @@ export function ActionCard({ action, compact = false, onEdit }: ActionCardProps)
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-7 w-7 opacity-70 group-hover:opacity-100 transition-opacity"
+                    className="h-6 w-6 opacity-70 group-hover:opacity-100 transition-opacity"
                   >
-                    <MoreHorizontal className="h-4 w-4" />
+                    <MoreHorizontal className="h-3.5 w-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -147,6 +130,17 @@ export function ActionCard({ action, compact = false, onEdit }: ActionCardProps)
               </DropdownMenu>
             )}
           </div>
+        </div>
+        
+        {/* Date row */}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground pl-6">
+          <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+          <span className={cn(
+            isOverdue && "text-destructive",
+            isDueToday && !isOverdue && "text-status-orange"
+          )}>
+            {format(dueDate, 'dd MMM.', { locale: fr })}
+          </span>
         </div>
       </div>
     );
