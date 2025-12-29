@@ -1,29 +1,35 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function Index() {
   const navigate = useNavigate();
-  const { user, loading, role } = useAuth();
+  const { signOut } = useAuth();
+  const [isClearing, setIsClearing] = useState(true);
 
   useEffect(() => {
-    if (!loading) {
-      if (user) {
-        // Admin redirigé vers la page Utilisateurs, autres vers le Dashboard
-        if (role === 'admin') {
-          navigate('/users');
-        } else {
-          navigate('/dashboard');
-        }
-      } else {
-        navigate('/auth');
+    // Force sign out on every app load and redirect to auth
+    const clearSessionAndRedirect = async () => {
+      try {
+        await signOut();
+      } catch (error) {
+        console.error('Error signing out:', error);
+      } finally {
+        setIsClearing(false);
+        navigate('/auth', { replace: true });
       }
-    }
-  }, [user, loading, role, navigate]);
+    };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-    </div>
-  );
+    clearSessionAndRedirect();
+  }, [signOut, navigate]);
+
+  if (isClearing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return null;
 }
